@@ -1,0 +1,641 @@
+{
+  "3778": {
+    "name": "Computer Science",
+    "UOC": 144,
+    "majorList": [
+      {
+        "name": "Computer Science",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithm Design and Analysis"
+          },
+          {
+            "Code": "COMP3821",
+            "UOC": 6,
+            "Course Name": "Extended Algorithm Design and Analysis"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (Database Systems)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3311",
+            "UOC": 6,
+            "Course Name": "Database Systems"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithm Design and Analysis"
+          },
+          {
+            "Code": "COMP3821",
+            "UOC": 6,
+            "Course Name": "Extended Algorithm Design and Analysis"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (eCommerce Systems)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3311",
+            "UOC": 6,
+            "Course Name": "Database Systems"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithms and Programming Techniques"
+          },
+          {
+            "Code": "COMP3821",
+            "UOC": 6,
+            "Course Name": "Extended Algorithms and Programming Techniques"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (Artificial Intelligence)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3411",
+            "UOC": 6,
+            "Course Name": "Artificial Intelligence"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithm Design and Analysis"
+          },
+          {
+            "Code": "COMP3821",
+            "UOC": 6,
+            "Course Name": "Extended Algorithm Design and Analysis"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (Programming Languages)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP3161",
+            "UOC": 6,
+            "Course Name": "Concepts of Programming Languages"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (Computer Networks)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3331",
+            "UOC": 6,
+            "Course Name": "Computer Networks and Applications"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithm Design and Analysis"
+          },
+          {
+            "Code": "COMP3821",
+            "UOC": 6,
+            "Course Name": "Extended Algorithm Design and Analysis"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (Embedded Systems)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3222",
+            "UOC": 6,
+            "Course Name": "Digital Circuits and Systems"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithm Design and Analysis"
+          },
+          {
+            "Code": "COMP3821",
+            "UOC": 6,
+            "Course Name": "Extended Algorithm Design and Analysis"
+          }
+        ]
+      },
+      {
+        "name": "Computer Science (Security Engineering)",
+        "UOC": 96,
+        "CompulsoryCourseList": [
+          {
+            "Code": "COMP1511",
+            "UOC": 6,
+            "Course Name": "Programming Fundamentals"
+          },
+          {
+            "Code": "COMP1521",
+            "UOC": 6,
+            "Course Name": "Computer Systems Fundamentals"
+          },
+          {
+            "Code": "COMP1531",
+            "UOC": 6,
+            "Course Name": "Software Engineering Fundamentals"
+          },
+          {
+            "Code": "COMP2511",
+            "UOC": 6,
+            "Course Name": "Object-Oriented Design & Programming"
+          },
+          {
+            "Code": "COMP2521",
+            "UOC": 6,
+            "Course Name": "Data Structures and Algorithms"
+          },
+          {
+            "Code": "COMP3121",
+            "UOC": 6,
+            "Course Name": "Algorithm Design and Analysis"
+          },
+          {
+            "Code": "COMP3900",
+            "UOC": 6,
+            "Course Name": "Computer Science Project"
+          },
+          {
+            "Code": "COMP4920",
+            "UOC": 6,
+            "Course Name": "Professional Issues and Ethics in Information Technology"
+          },
+          {
+            "Code": "MATH1081",
+            "UOC": 6,
+            "Course Name": "Discrete Mathematics"
+          },
+          {
+            "Code": "MATH1131",
+            "UOC": 6,
+            "Course Name": "Mathematics 1A"
+          },
+          {
+            "Code": "MATH1141",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1A"
+          },
+          {
+            "Code": "MATH1231",
+            "UOC": 6,
+            "Course Name": "Mathematics 1B"
+          },
+          {
+            "Code": "MATH1241",
+            "UOC": 6,
+            "Course Name": "Higher Mathematics 1B"
+          },
+          {
+            "Code": "COMP6441",
+            "UOC": 6,
+            "Course Name": "Security Engineering and Cyber Security"
+          },
+          {
+            "Code": "COMP6841",
+            "UOC": 6,
+            "Course Name": "Extended Security Engineering and Cyber Security"
+          }
+        ]
+      }
+    ]
+  }
+}
