@@ -1,6 +1,6 @@
 <template>
-  <div v-for="{ Code, UOC, 'Course Name': courseName } in courseList" :key="Code">
-    {{ Code }} {{ UOC }} {{ courseName }}
+  <div v-for="course in courseList" :key="course.Code">
+    {{ JSON.stringify(course) }}
   </div>
 </template>
 
