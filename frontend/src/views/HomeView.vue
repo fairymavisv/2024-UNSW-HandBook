@@ -1,6 +1,6 @@
 <template>
-  <div>
-    {{ courseList }}
+  <div v-for="{ Code, UOC, 'Course Name': courseName } in courseList" :key="Code">
+    {{ Code }} {{ UOC }} {{ courseName }}
   </div>
 </template>
 
