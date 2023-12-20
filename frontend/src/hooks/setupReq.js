@@ -1,4 +1,4 @@
-import { ref, onBeforeMount} from 'vue';
+import { ref, onMounted } from 'vue';
 import useGlobalProp from './useGlobalProp.js'
 
 export default function (...args) {
@@ -6,7 +6,7 @@ export default function (...args) {
 
     const data = ref()
 
-    onBeforeMount(async () => {
+    onMounted(async () => {
         const courseList = await $fetchReq(...args)
         data.value = courseList
     })
