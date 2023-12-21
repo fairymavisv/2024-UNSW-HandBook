@@ -21,6 +21,8 @@ export class ProgramService {
             return program.majorList && program.majorList.length > 0
                 ? program.majorList.map(major => major.name)
                 : program.CompulsoryCourseList;
+        }else {
+
         }
         return null; // 或者抛出一个错误，如果 program 不存在
     }
@@ -34,6 +36,8 @@ export class ProgramService {
         }
         return null; // 或者抛出一个错误，如果 major 不存在
     }
+
+
 
 
 }
