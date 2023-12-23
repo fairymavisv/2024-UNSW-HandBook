@@ -8,7 +8,6 @@ export default function (callback, ...args) {
 
     onMounted(async () => {
         const courseList = await $fetchReq(...args)
-        // data.value = Object.freeze(courseList)
         data.value = callback(courseList)
     })
 
