@@ -12,9 +12,15 @@ export class AuthController {
     return this.authService.register(body);
   }
 
-  @Post('authenticate')
-  async authenticate(@Body() body: { email: string; vertificationCode: string; nickName: string}): Promise<any> {
-    return this.authService.authenticate(body);
+  @Post('send-verification-code')
+  async sendVerificationCode(@Body() body: { email: string }): Promise<any> {
+
+    return await this.authService.sendVerificationCode(body);
+  }
+
+  @Post('submitNickname')
+  async submitNickname(@Body() body: { email: string; vertificationCode: string; nickName: string}): Promise<any> {
+    return this.authService.submitNickname(body);
   }
 
   @Post('login')
