@@ -102,6 +102,7 @@ export class AuthService {
   async login(user: { email: string; password: string }): Promise<any> {
     // 检查用户是否存在于data目录下的users.json文件中
     const { email, password } = user;
+
     const jsonPath = path.join(__dirname, '..', '..', 'data', 'users.json');
     const users = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
