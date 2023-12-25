@@ -44,7 +44,7 @@ export class UserService {
 
     async getUser(username: string): Promise<User> {
         const user = await this.userModel.findOne({username: username});
-        //const user = await this.userModel.findById('6583e613abd93b909c848df3');
+
 
         console.log('Fetching user with username:', username);
         console.log('Found user:', user);
