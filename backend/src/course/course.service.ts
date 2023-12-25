@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { CourseInterface } from './course.interface';
 import {InjectModel} from "@nestjs/mongoose";
-import {Model} from "mongoose";
-import {Course, CourseInfo} from "./course.model";
+import mongoose, {Model} from "mongoose";
+import {Course, CourseInfo,Comment} from "./course.model";
 
 
 @Injectable()
 export class CourseService {
     constructor(
-        @InjectModel('Course') private courseModel: Model<Course>
+        @InjectModel('Course') private courseModel: Model<Course>,
+        @InjectModel('Comment') private commentModel: Model<Comment>
     ) {}
 
     async getCourseInfo(CourseCode: string): Promise<CourseInfo> {
@@ -43,4 +44,34 @@ export class CourseService {
             throw new Error('Course not found');
         }
     }
+
+    async createCourseComment(CourseCode: string, userId: string, text: string, rating: number) {
+        let courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
+        console.log("courseFromMongo", courseFromMongo);
+
+        if(!courseFromMongo) {
+            const newCourse = new this.courseModel({
+                courseCode: CourseCode,
+                comments: []
+            });
+            await newCourse.save();
+
+        }
+        courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
+        console.log("courseFromMongo after create", courseFromMongo);
+
+        // 确保这里使用的是针对评论的模型
+        const newComment = new this.commentModel({
+            text: text,
+            userId: userId, // 如果 userId 已经是字符串形式的 ObjectId，则无需转换
+            updatedAt: new Date(),
+            rating: rating
+        });
+        console.log("newComment", newComment);
+        courseFromMongo.comments.push(newComment);
+        await courseFromMongo.save();
+        console.log("courseFromMongo after save", courseFromMongo);
+        return newComment;
+    }
+
 }

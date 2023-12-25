@@ -12,8 +12,25 @@ export class CommentDto {
     public updatedAt: Date;
 
     @ApiProperty({ example: 'tron', description: 'The username of the user who made the comment' })
-    public username: string;
+    public username?: string;
 }
+
+
+export class CreateCommentDto {
+    //顺序跟前端传过来的顺序一致
+    @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })
+    courseCode: string;
+
+    @ApiProperty({ example: '1234567890abcdef', description: 'The ID of the user' })
+    userId: string;
+
+    @ApiProperty({ example: 'This course is great!', description: 'The text of the comment' })
+    text: string;
+
+    @ApiProperty({ example: 5, description: 'The rating given by the user' })
+    rating: number;
+}
+
 
 export class CourseDto {
     @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })

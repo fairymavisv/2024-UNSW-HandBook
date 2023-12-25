@@ -3,7 +3,7 @@ import { CourseController } from './course.controller';
 import { CourseService } from './course.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import {ConfigModule} from "@nestjs/config";
-import { courseSchema } from './course.model';
+import {commentSchema, courseSchema} from './course.model';
 
 
 @Module({
@@ -12,7 +12,7 @@ import { courseSchema } from './course.model';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
-        MongooseModule.forFeature([{ name: 'Course', schema: courseSchema }]),
+        MongooseModule.forFeature([{ name: 'Course', schema: courseSchema }, { name: 'Comment', schema: commentSchema }]),
         MongooseModule.forRoot(process.env.MONGO_URI),
     ],
     controllers: [CourseController],
