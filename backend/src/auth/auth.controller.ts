@@ -8,7 +8,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() body: { email: string; password: string; confirmPassword: string }): Promise<any> {
+  async register(@Body() body: { username: string; password: string; confirmPassword: string }): Promise<any> {
     return this.authService.register(body);
   }
 
@@ -19,12 +19,12 @@ export class AuthController {
   }
 
   @Post('submitNickname')
-  async submitNickname(@Body() body: { email: string; vertificationCode: string; nickName: string}): Promise<any> {
+  async submitNickname(@Body() body: { username: string; vertificationCode: string; nickName: string}): Promise<any> {
     return this.authService.submitNickname(body);
   }
 
   @Post('login')
-  async login(@Body() body: { email: string; password: string }): Promise<any> {
+  async login(@Body() body: { username: string; password: string }): Promise<any> {
     return this.authService.login(body);
   }
 }

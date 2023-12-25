@@ -4,10 +4,17 @@ import * as path from 'path';
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import e from 'express';
+import { userModel } from 'src/user/user.model';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User } from 'src/user/user.model';
+
 
 @Injectable()
 export class AuthService {
 
+  constructor(@InjectModel('User') private userModel: Model<User>) {}
+  /*
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -15,9 +22,10 @@ export class AuthService {
       pass: 'Dyc20020303.', // 发件人邮箱密码或应用程序密码
     },
   });
+  */
 
-  async register(user: { email: string; password: string; confirmPassword: string }): Promise<any> {
-    const { email, password, confirmPassword } = user;
+  async register(user: { username: string; password: string; confirmPassword: string }): Promise<any> {
+    const { username, password, confirmPassword } = user;
 
     // 检查密码和确认密码是否匹配
     if (password !== confirmPassword) {
@@ -25,26 +33,26 @@ export class AuthService {
     }
     // 检查email必须为z + 7位数字 + @ad.unsw.edu.au格式
     const emailRegex = /^z\d{7}@ad\.unsw\.edu\.au$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(username)) {
       return { message: 'Email format must be UNSW student email' };
     }
 
-    // 检查用户是否已经存在于data目录下的users.json文件中
-    const jsonPath = path.join(__dirname, '..', '..', 'data', 'users.json');
-    const users = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    // 密码要包含大小写字母加数字，长度大于等于8位
+    const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return { message: 'Password must contain at least one uppercase letter, one lowercase letter and one number' };
+    }
 
-    if (users[email]) {
+    // 检查用户是否已经存在于MongoDB数据库中
+    const existingUser = await this.userModel.findOne({ username: username });
+    if (existingUser) {
       return { message: 'User already exists' };
     }
 
-    // 将用户添加到users.json文件中
-    users[email] = { password };
-    // 将用户初始昵称设置为邮箱前缀
-    const nickname = email.split('@')[0];
-    users[email].nickname = nickname;
-
-    // 将更新后的用户信息写入users.json文件中
-    fs.writeFileSync(jsonPath, JSON.stringify(users));
+    console.log('##################');
+    // 将用户添加到MongoDB数据库中
+    const newUser = new this.userModel({ username, password });
+    await newUser.save();
 
     // 返回注册成功的信息
 
@@ -76,13 +84,11 @@ export class AuthService {
 
   }
 
-  async submitNickname(user: { email: string; vertificationCode: string; nickName: string}): Promise<any> {
-    // 检查用户是否存在于data目录下的users.json文件中
-    const { email, vertificationCode, nickName } = user;
-    const jsonPath = path.join(__dirname, '..', '..', 'data', 'users.json');
-    const users = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-
-    if (!users[email]) {
+  async submitNickname(user: { username: string; vertificationCode: string; nickName: string}): Promise<any> {
+    // 检查用户是否存在于MongoDB数据库中
+    const { username, vertificationCode, nickName } = user;
+    const existingUser = await this.userModel.findOne({ username: username });
+    if (!existingUser) {
       return { message: 'User does not exist' };
     }
 
@@ -91,30 +97,26 @@ export class AuthService {
       return { message: 'Verification code is incorrect' };
     }
 
-    // 将用户昵称更新到users.json文件中
-    users[email].nickname = nickName;
-    fs.writeFileSync(jsonPath, JSON.stringify(users));
+    // 将用户昵称更新到MongoDB数据库中
+    existingUser.nickname = nickName;
+    await existingUser.save();
 
     // 返回提交昵称成功的信息
     return { message: 'Nickname submitted' };
   }
 
-  async login(user: { email: string; password: string }): Promise<any> {
-    // 检查用户是否存在于data目录下的users.json文件中
-    const { email, password } = user;
-    const jsonPath = path.join(__dirname, '..', '..', 'data', 'users.json');
-    const users = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-
-    if (!users[email]) {
+  async login(user: { username: string; password: string }): Promise<any> {
+    const { username, password } = user;
+    const existingUser = await this.userModel.findOne({ username: username });
+    if (!existingUser) {
       return { message: 'User does not exist' };
     }
 
     // 检查密码是否正确
-    if (users[email].password !== password) {
+    if (password !== existingUser.password) {
       return { message: 'Password is incorrect' };
     }
 
-    // 返回登录成功的信息
     return { message: 'Login successful' };
   }
 }
