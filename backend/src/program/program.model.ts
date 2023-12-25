@@ -1,7 +1,7 @@
 // program.model.ts
 
 export class Program {
-    constructor(public name: string, public UOC: number, public code: string, public majorList: Major[],public CompulsoryCourseList: Course[],public SpecializedElectiveCourses: Course[] ) {}
+    constructor(public name: string, public UOC: number, public code: string, public majorList: Major[],public CompulsoryCourseList: Course[],public SpecializedElectiveCourses: Course[]) {}
 }
 
 
