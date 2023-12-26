@@ -2,19 +2,19 @@
     <div class="login-container">
         <div class="login-box">
             <h2>Login</h2>
-            <form>
+            <form @submit.prevent="submitForm">
                 <div class="zid-group">
-                    <input type="text" placeholder="ZID" required>
+                    <input type="text" placeholder="ZID" v-model="zid" required>
                 </div>
                 <div class="password-group">
-                    <input type="password" placeholder="Password" required>
+                    <input type="password" placeholder="Password" v-model="password" required>
                 </div>
                 <button type="submit">
                     Submit
                 </button>
             </form>
             <div class="options">
-            <router-link to="/forgot-password">Forgot Password?</router-link> |
+            <!-- <router-link to="/forgot-password">Forgot Password?</router-link> | -->
             <router-link to="/signup">Sign Up</router-link>
             </div>
         </div>
@@ -32,6 +32,7 @@ export default {
   },
   methods: {
     validateInput() {
+        console.log("ZID:",this.zid);
         const zidRegex = /^z\d{7}$/;
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
 
@@ -50,7 +51,7 @@ export default {
         if (this.validateInput()) {
             try{
                 const response = await this.loginUser(this.zid, this.password);
-                if(response.success){
+                if (response.message === 'Login successful'){
                     this.$router.push('/home');
                 } else {
                     alert(response.message);
@@ -62,12 +63,11 @@ export default {
         }
     },
     async loginUser(zid, password) {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json'},
-            body: JSON.stringify({zid, password})
-        });
-        return response.json();
+
+        const email = `${zid}@ad.unsw.edu.au`;
+
+        const response = await this.$fetchReq('auth/login', 'POST', { email, password });
+        return response;
     }
   }
 };

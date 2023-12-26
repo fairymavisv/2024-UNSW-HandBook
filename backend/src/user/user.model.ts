@@ -6,7 +6,8 @@ export interface User extends mongoose.Document {
     username: string;
     password: string;
     nickname: string;
-    programs: string;
+    program: string;
+    major?: string;
     courseslist: string[];
 }
 
@@ -15,7 +16,8 @@ export const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     nickname: { type: String },
-    programs: { type: String },
+    program: { type: String },
+    major: { type: String },
     courseslist: { type: [String], default: [] }
 }, { collection: 'user' });
 

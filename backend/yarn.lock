@@ -739,11 +739,14 @@
     iterare "1.2.1"
     path-to-regexp "3.2.0"
     tslib "2.6.2"
+<<<<<<< HEAD
+=======
 
 "@nestjs/mapped-types@2.0.4":
   version "2.0.4"
   resolved "https://registry.npmjs.org/@nestjs/mapped-types/-/mapped-types-2.0.4.tgz"
   integrity sha512-xl+gUSp0B+ln1VSNoUftlglk8dfpUes3DHGxKZ5knuBxS5g2H/8p9/DSBOYWUfO5f4u9s6ffBPZ71WO+tbe5SA==
+>>>>>>> demoA
 
 "@nestjs/mongoose@^10.0.2":
   version "10.0.2"
@@ -4890,9 +4893,9 @@ ts-api-utils@^1.0.1:
   resolved "https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-1.0.3.tgz"
   integrity sha512-wNMeqtMz5NtwpT/UZGY5alT+VoKdSsOOP/kqHFcUW1P/VRhH2wJ48+DN2WwUliNbQ976ETwDL0Ifd2VVvgonvg==
 
-ts-jest@^29.1.0:
+ts-jest@^29.1.1:
   version "29.1.1"
-  resolved "https://registry.npmjs.org/ts-jest/-/ts-jest-29.1.1.tgz"
+  resolved "https://registry.yarnpkg.com/ts-jest/-/ts-jest-29.1.1.tgz#f58fe62c63caf7bfcc5cc6472082f79180f0815b"
   integrity sha512-D6xjnnbP17cC85nliwGiL+tpoKN0StpgE0TeOjXQTU6MVCfsB4v7aW05CgQ/1OywGb0x/oy9hHFnN+sczTiRaA==
   dependencies:
     bs-logger "0.x"
@@ -4992,11 +4995,14 @@ typedarray@^0.0.6:
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
   integrity sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==
 
+<<<<<<< HEAD
+=======
 typescript-nestjs-swagger-plugin@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/typescript-nestjs-swagger-plugin/-/typescript-nestjs-swagger-plugin-2.0.0.tgz#74d3450fb4cb746c3d7bb7c6313c0afed3747f9b"
   integrity sha512-OX8ts8b6T4uhLksmwPPK8lbPHXsA/WwTGStk71WT+GpRDWf/JiTb6Nc05yp4k0GFTgS09Pm1R3hDcRut1RiCcg==
 
+>>>>>>> demoA
 typescript@5.2.2:
   version "5.2.2"
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.2.2.tgz"
