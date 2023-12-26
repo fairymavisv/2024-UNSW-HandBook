@@ -22,8 +22,6 @@ const routes = [
     component: HomeView
   },
   {
-    path: '/about',
-    name: 'about',
     path: '/courseList',
     name: 'courseList',
     // route level code-splitting
