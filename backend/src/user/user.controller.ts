@@ -79,4 +79,6 @@ export class UserController {
             throw new HttpException('Failed to update course status', HttpStatus.BAD_REQUEST);
         }
     }
+
+    //TODO:有没有必要添加删除个人课表功能
 }

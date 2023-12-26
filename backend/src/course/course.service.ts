@@ -5,6 +5,7 @@ import mongoose, {Model} from "mongoose";
 import {Course, CourseInfo,Comment} from "./course.model";
 
 
+
 @Injectable()
 export class CourseService {
     constructor(
@@ -46,6 +47,7 @@ export class CourseService {
     }
 
     async createCourseComment(CourseCode: string, userId: string, text: string, rating: number) {
+        //TODO:需要检测添加评论的课是否存在
         let courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
         console.log("courseFromMongo", courseFromMongo);
 
@@ -74,4 +76,22 @@ export class CourseService {
         return newComment;
     }
 
+
+    //TODO：是否需要更改评论
+
+    async deleteCourseComment(deleteCommentID: string) {
+        console.log("deleteCommentID", deleteCommentID);
+        // 假设 courseModel 是指向课程集合的模型
+        const result = await this.courseModel.updateMany(
+            { "comments._id": deleteCommentID },
+            { $pull: { comments: { _id: deleteCommentID } } }
+        );
+
+        if (result.modifiedCount === 0) {
+            throw new Error('Course comment not found or already deleted');
+        }
+
+        return deleteCommentID + " has been deleted";
+
+    }
 }
