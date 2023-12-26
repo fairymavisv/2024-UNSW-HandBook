@@ -48,6 +48,10 @@ export class CourseService {
 
     async createCourseComment(CourseCode: string, userId: string, text: string, rating: number) {
         //TODO:需要检测添加评论的课是否存在
+        const course = await CourseInterface.getCourseInfo(CourseCode);
+        if (!course) {
+            throw new Error('Course not found');
+        }
         let courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
         console.log("courseFromMongo", courseFromMongo);
 
