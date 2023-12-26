@@ -105,21 +105,10 @@ export class AuthService {
     return { message: 'Nickname submitted' };
   }
 
-<<<<<<< HEAD
-  async login(user: { email: string; password: string }): Promise<any> {
-    // 检查用户是否存在于data目录下的users.json文件中
-    const { email, password } = user;
-
-    const jsonPath = path.join(__dirname, '..', '..', 'data', 'users.json');
-    const users = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-
-    if (!users[email]) {
-=======
   async login(user: { username: string; password: string }): Promise<any> {
     const { username, password } = user;
     const existingUser = await this.userModel.findOne({ username: username });
     if (!existingUser) {
->>>>>>> demoA
       return { message: 'User does not exist' };
     }
 

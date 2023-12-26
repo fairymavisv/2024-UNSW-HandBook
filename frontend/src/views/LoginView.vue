@@ -30,9 +30,10 @@ export default {
       password: '',
     };
   },
+
   methods: {
     validateInput() {
-        console.log("ZID:",this.zid);
+        
         const zidRegex = /^z\d{7}$/;
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
 
@@ -47,10 +48,11 @@ export default {
         }
       return true;
     },
+
     async submitForm() {
         if (this.validateInput()) {
             try{
-                const response = await this.loginUser(this.zid, this.password);
+                const response = await this.loginUser();
                 if (response.message === 'Login successful'){
                     this.$router.push('/home');
                 } else {
@@ -62,11 +64,12 @@ export default {
             }
         }
     },
-    async loginUser(zid, password) {
+    async loginUser() {
 
-        const email = `${zid}@ad.unsw.edu.au`;
+        const username = `${this.zid}@ad.unsw.edu.au`;
+        const password = this.password;
 
-        const response = await this.$fetchReq('auth/login', 'POST', { email, password });
+        const response = await this.$fetchReq('auth/login', 'POST', { username, password });
         return response;
     }
   }

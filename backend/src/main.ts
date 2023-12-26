@@ -4,9 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-<<<<<<< HEAD
 
-=======
   const config = new DocumentBuilder()
       .setTitle('Backend API')
       .setDescription('The backend API description')
@@ -16,7 +14,6 @@ async function bootstrap() {
       .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
->>>>>>> demoA
   await app.listen(3000);
 }
 bootstrap();

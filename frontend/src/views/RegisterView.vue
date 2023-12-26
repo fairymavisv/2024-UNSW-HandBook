@@ -2,15 +2,15 @@
 <div class = 'register-container'>
     <div class = 'register-box'>
         <h2>Register</h2>
-        <form>
+        <form @submit.prevent="submitForm">
             <div class = 'input-group'>
-                <input type="text" placeholder="Zmail" required>
+                <input type="text" placeholder="Zmail" required v-model="email">
             </div>
             <div class = 'input-group'>
-                <input type="password" placeholder="Password" required>
+                <input type="password" placeholder="Password" required v-model="password">
             </div>
             <div class = 'input-group'>
-                <input type="password" placeholder="Confirm Password" required>
+                <input type="password" placeholder="Confirm Password" required v-model="repassword">
             </div>
             <button type="submit">Register</button>
         </form>
@@ -21,7 +21,66 @@
 <script>
 export default{
     name:"RegisterView",
-}
+
+    data(){
+        return {
+            email:'',
+            password: '',
+            repassword:'',
+        };
+    },
+
+    methods:{
+        validateInput() {
+            const emailRegex = /^z\d{7}@ad\.unsw\.edu\.au$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
+
+            if(!emailRegex.test(this.email)){
+                alert("Invalid Email Format. Please use an email address that starts with 'z' followed by 7 digits and ends with '@ad.unsw.edu.au'");
+                return false;
+            }
+
+            if (!passwordRegex.test(this.password)) {
+                alert("Invalid Password Format. Password must contain at least one lowercase letter, one uppercase letter, one digit, and be at least 8 characters long.");
+                return false;
+            }
+
+            if (this.password !== this.repassword) {
+                alert("Passwords do not match. Please make sure the password and confirmation password are the same.");
+                return false;
+            }
+
+            return true;
+        },
+
+        async submitForm() {
+            if (this.validateInput()) {
+                try{
+                    const response = await this.RegisterUser();
+                    if (response.message === 'Registration successful'){
+                        this.$router.push('/home');
+                    } else {
+                        alert(response.message);
+                    }
+                } catch(error) {
+                    console.error('Register error', error);
+                    alert("An error occurred during registeration.");
+                }
+            }
+        },
+
+        async RegisterUser() {
+            const username = this.email;
+            const password = this.password;
+            const confirmPassword = this.repassword
+
+            const response = await this.$fetchReq('auth/register', 'POST', {username, password, confirmPassword});
+            return response;
+        },
+
+        
+    }
+};
 </script>
 
 <style>
