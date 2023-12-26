@@ -2,6 +2,7 @@ import {Injectable, NotFoundException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {User} from './user.model';
+import {createProfileDto, } from "./user.dto";
 
 @Injectable()
 export class UserService {
@@ -64,5 +65,22 @@ export class UserService {
         }
 
     }
+
+    //create or update user profile
+
+    async createUser(user:createProfileDto) {
+        let userfromMoogo = await this.userModel.findOne({username: user.username});
+        if(!userfromMoogo){
+            throw new NotFoundException(`User with username ${user.username} not found`);
+        }
+        console.log('before', userfromMoogo);
+        userfromMoogo.program = user.program;
+        userfromMoogo.major = user.major;
+        await userfromMoogo.save();
+        console.log('after', userfromMoogo);
+        return user.username + '\'s profile has been upgraded';
+    }
+
+
 }
 

@@ -105,6 +105,7 @@ export class AuthService {
     return { message: 'Nickname submitted' };
   }
 
+
   async login(user: { username: string; password: string }): Promise<any> {
     const { username, password } = user;
     const existingUser = await this.userModel.findOne({ username: username });
