@@ -1,40 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-import { Program, Course } from './program.model';
+// import * as fs from 'fs';
+// import * as path from 'path';
+// import { Program, Course } from './program.model';
+import { programInterface } from './program.interface';
 
 @Injectable()
 export class ProgramService {
-    private programs: { [key: string]: Program };
-    private recentProgram: Program | null = null;
+    // private programs: { [key: string]: Program };
 
     constructor() {
-        const jsonPath = path.join(__dirname, '..', '..', 'data', 'programs.json');
-        this.programs = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+        // const jsonPath = path.join(__dirname, '..', '..', 'data', 'programs.json');
+        // this.programs = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
     }
 
-    getProgramInfo(programCode: string): string[] | Course[] {
-        const program = this.programs[programCode];
+    async getProgramInfo(programCode: string): Promise<string[]> {
+        const program = await programInterface.getProgramInfo(programCode);
         if (program) {
-            this.recentProgram = program; // 缓存当前 program
             return program.majorList && program.majorList.length > 0
                 ? program.majorList.map(major => major.name)
                 : program.CompulsoryCourseList;
         }else {
-
+            throw new Error('Program not found');
         }
-        return null; // 或者抛出一个错误，如果 program 不存在
+        return null;
     }
 
-    getCoursesForMajor(majorName: string): Course[] {
-        if (this.recentProgram) {
-            const major = this.recentProgram.majorList?.find(m => m.name === majorName);
-            if (major) {
-                return major.CompulsoryCourseList;
-            }
+    async getCoursesForMajor(programCode: string, majorName: string,): Promise<string[]> {
+        const major = await programInterface.getMajorInfo(programCode, majorName);
+        if (major) {
+            return major;
+        }else {
+            throw new Error('Major not found');
         }
-        return null; // 或者抛出一个错误，如果 major 不存在
+
+        return null;
     }
 
 
