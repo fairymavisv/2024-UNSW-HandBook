@@ -12,9 +12,18 @@ export class registerBodyDto {
 
 }
 
+export class sendVerificationCodeDto {
+    @ApiProperty()
+    email: string;
+}
+
 export class nickNameBodyDto {
-    @ApiProperty({ example: 'z5362100@ad.unsw.edu.au', description: 'The UNSW Email of the user' })
-    token: string;
+
+    @ApiProperty({ example: {
+        username: "z5362103@ad.unsw.edu.au",
+        password: "Dyc21120303"
+    }, description: 'The UNSW Email and password of the user' })
+    userData: { username: string; password: string };
 
     @ApiProperty({ example: '123456', description: 'The vertification code' })
     vertificationCode: string;
@@ -47,6 +56,27 @@ export class loginResponse {
       this.message = message;
       this.token = token;
     }
+}
+
+export class registerResponse {
+    @ApiProperty({ example: 200, description: 'The status code of the response' })
+    statusCode: number;
+  
+    @ApiProperty()
+    message: string;
+
+    @ApiProperty({ example: {
+        username: "z5362103@ad.unsw.edu.au",
+        password: "Dyc21120303"
+    }, description: 'The UNSW Email and password of the user' })
+    userData?: { username: string; password: string };
+
+    constructor(statusCode: number, message: string) {
+        this.statusCode = statusCode;
+        this.message = message;
+        this.userData = { username: '', password: '' };
+    }
+
 }
 
 export class authResponse {
