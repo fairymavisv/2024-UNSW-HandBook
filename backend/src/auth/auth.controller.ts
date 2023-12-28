@@ -2,29 +2,55 @@
 
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { authResponse, loginBodyDto, loginResponse, nickNameBodyDto, registerBodyDto } from './auth.dto';
+import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() body: { username: string; password: string; confirmPassword: string }): Promise<any> {
+  @ApiResponse({ status: 500, description: 'internal error' })
+  @ApiResponse({
+    status: 200,
+    description: 'register success',
+    type: loginResponse
+  })
+  async register(@Body() body: registerBodyDto): Promise<any> {
     return this.authService.register(body);
   }
 
   @Post('send-verification-code')
+  @ApiResponse({ status: 500, description: 'internal error' })
+  @ApiResponse({
+    status: 200,
+    description: 'register success',
+    type: authResponse
+  })
   async sendVerificationCode(@Body() body: { email: string }): Promise<any> {
 
     return await this.authService.sendVerificationCode(body);
   }
 
   @Post('submitNickname')
-  async submitNickname(@Body() body: { username: string; vertificationCode: string; nickName: string}): Promise<any> {
+  @ApiResponse({ status: 404, description: 'user not found' })
+  @ApiResponse({
+      status: 200,
+      description: 'submit nickname success',
+      type: authResponse
+  })
+  async submitNickname(@Body() body: nickNameBodyDto): Promise<any> {
     return this.authService.submitNickname(body);
   }
 
   @Post('login')
-  async login(@Body() body: { username: string; password: string }): Promise<any> {
+  @ApiResponse({ status: 404, description: 'user not found' })
+  @ApiResponse({
+      status: 200,
+      description: 'login success',
+      type: loginResponse
+  })
+  async login(@Body() body: loginBodyDto): Promise<any> {
     return this.authService.login(body);
   }
 }

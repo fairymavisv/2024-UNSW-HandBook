@@ -8,12 +8,14 @@ import { userModel } from 'src/user/user.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/user/user.model';
+import { JwtAuthService } from 'src/jwt.service';
+import { authResponse, loginResponse } from './auth.dto';
 
 
 @Injectable()
 export class AuthService {
 
-  constructor(@InjectModel('User') private userModel: Model<User>) {}
+  constructor(@InjectModel('User') private userModel: Model<User>, private jwtService: JwtAuthService) {}
   /*
   private transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -24,39 +26,38 @@ export class AuthService {
   });
   */
 
-  async register(user: { username: string; password: string; confirmPassword: string }): Promise<any> {
+  async register(user: { username: string; password: string; confirmPassword: string }): Promise<loginResponse> {
     const { username, password, confirmPassword } = user;
 
     // 检查密码和确认密码是否匹配
     if (password !== confirmPassword) {
-      return { message: 'Password and Confirm Password do not match' };
+      return new loginResponse(404, 'Password and confirm password do not match');
     }
     // 检查email必须为z + 7位数字 + @ad.unsw.edu.au格式
     const emailRegex = /^z\d{7}@ad\.unsw\.edu\.au$/;
     if (!emailRegex.test(username)) {
-      return { message: 'Email format must be UNSW student email' };
+      return new loginResponse(404, 'wrong email format');
     }
 
     // 密码要包含大小写字母加数字，长度大于等于8位
     const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/;
     if (!passwordRegex.test(password)) {
-      return { message: 'Password must contain at least one uppercase letter, one lowercase letter and one number' };
+      return new loginResponse(404, 'Password must contain at least 8 characters, including uppercase, lowercase and numbers');
     }
 
     // 检查用户是否已经存在于MongoDB数据库中
     const existingUser = await this.userModel.findOne({ username: username });
     if (existingUser) {
-      return { message: 'User already exists' };
+      return new loginResponse(404, 'User already exists');
     }
 
-    console.log('##################');
     // 将用户添加到MongoDB数据库中
     const newUser = new this.userModel({ username, password });
     await newUser.save();
 
-    // 返回注册成功的信息
-
-    return { message: 'Registration successful' };
+    // 生成token
+    const token = await this.jwtService.generateToken(username);
+    return { statusCode: 200, message: 'Register successful', token };
   }
 
   async sendVerificationCode(user: { email: string }): Promise<any> {
@@ -80,21 +81,24 @@ export class AuthService {
       });
     });
     */
-    return { message: 'Verification code sent' };
+    return new authResponse(200, 'Verification code sent');
 
   }
 
-  async submitNickname(user: { username: string; vertificationCode: string; nickName: string}): Promise<any> {
+  async submitNickname(user: { token: string; vertificationCode: string; nickName: string}): Promise<authResponse> {
     // 检查用户是否存在于MongoDB数据库中
-    const { username, vertificationCode, nickName } = user;
+    const { token, vertificationCode, nickName } = user;
+    // 解析token
+    const username = await this.jwtService.verifyToken(token);
+    console.log(username);
     const existingUser = await this.userModel.findOne({ username: username });
     if (!existingUser) {
-      return { message: 'User does not exist' };
+      return new authResponse(404, 'User does not exist');
     }
 
     // 检查验证码是否正确
     if (vertificationCode !== '123456') {
-      return { message: 'Verification code is incorrect' };
+      return new authResponse(404, 'Verification code is incorrect');
     }
 
     // 将用户昵称更新到MongoDB数据库中
@@ -102,22 +106,25 @@ export class AuthService {
     await existingUser.save();
 
     // 返回提交昵称成功的信息
-    return { message: 'Nickname submitted' };
+    return new authResponse(200, 'Submit nickname successful');
   }
 
 
-  async login(user: { username: string; password: string }): Promise<any> {
+  async login(user: { username: string; password: string }): Promise<loginResponse> {
     const { username, password } = user;
     const existingUser = await this.userModel.findOne({ username: username });
     if (!existingUser) {
-      return { message: 'User does not exist' };
+      return new loginResponse(404, 'User does not exist');
     }
 
     // 检查密码是否正确
     if (password !== existingUser.password) {
-      return { message: 'Password is incorrect' };
+      return new loginResponse(404, 'Password is incorrect');
     }
+    // console.log(existingUser)
+    const token = await this.jwtService.generateToken(username);
+    new loginResponse(200, 'Login successful', token);
 
-    return { message: 'Login successful' };
+    return new loginResponse(200, 'Login successful', token);
   }
 }
