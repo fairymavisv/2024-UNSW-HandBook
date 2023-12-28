@@ -1018,7 +1018,7 @@
     "AVIA3710": {
         "PROF3001": 1,
         "AVIA3700": 1,
-        "leftover_plaintext": "and 90UOC"
+        "leftover_plaintext": "90 UOC"
     },
     "AVIA3851": {},
     "AVIA3900": {
@@ -1440,8 +1440,7 @@
         "CHEM1011": 1,
         "CHEM1031": 1,
         "CHEM1051": 1,
-        "CHEM1831": 1,
-        "leftover_plaintext": "Exclusion:"
+        "CHEM1831": 1
     },
     "CHEM1011": {
         "CHEM1811": 1,
@@ -1619,7 +1618,8 @@
     "COMM1150": {
         "ECON1102": 1,
         "ECON1104": 1,
-        "DPBS1150": 1
+        "DPBS1150": 1,
+        "MGMT1101": 1
     },
     "COMM1170": {},
     "COMM1180": {
@@ -1629,8 +1629,7 @@
     "COMM1900": {},
     "COMM1999": {},
     "COMM2222": {
-        "COMM3101": 1,
-        "leftover_plaintext": "Co-op studentsIt is recommended a progression check is completed prior to enrolling"
+        "COMM3101": 1
     },
     "COMM2233": {
         "COMM3101": 1
@@ -1655,7 +1654,9 @@
     "COMM3091": {},
     "COMM3101": {
         "COMM2222": 1,
-        "COMM2233": 1
+        "COMM2233": 1,
+        "DIPP1510": 1,
+        "leftover_plaintext": "Business Co-Op programs"
     },
     "COMM3202": {
         "DIPP1510": 1,
@@ -2547,7 +2548,6 @@
         "COMM1100": 1,
         "3155": 1,
         "3521": 1,
-        "leftover_plaintext": "Students in BCom single or double-degree programs, except for  Actl/Comm and  Comm/Econ, are not allowed to enrol in this course",
         "MGMT1101": 1,
         "DPBS1101": 1
     },
@@ -2579,7 +2579,6 @@
         "3521": 1,
         "3715": 1,
         "3764": 1,
-        "leftover_plaintext": "& . Also, must not be enrolled in a BCom single or double degree (except  Actl/Comm or  Comm/Econ), or program  or",
         "DPBS1203": 1
     },
     "ECON1401": {},
@@ -5113,8 +5112,7 @@
         "PHYS9110": 1
     },
     "PHYS1160": {
-        "PHYS1116": 1,
-        "leftover_plaintext": "Higher Introduction to Astronomy"
+        "PHYS1116": 1
     },
     "PHYS1200": {},
     "PHYS1211": {},
@@ -5440,8 +5438,7 @@
         "ATSI3004": 1
     },
     "SOCW3006": {
-        "4787": 1,
-        "leftover_plaintext": "Students enrolled in  Social Work (Honours)/Law"
+        "4787": 1
     },
     "SOCW3009": {
         "SOCW4004": 1
@@ -5530,7 +5527,7 @@
     "SOSS3002": {},
     "SOSS3003": {
         "SLSP3900": 1,
-        "leftover_plaintext": "Students in the Bachelor of Social Work (Honours) / Criminology & Criminal Justice double degree program"
+        "4034": 1
     },
     "SOSS3006": {},
     "SOSS3007": {},

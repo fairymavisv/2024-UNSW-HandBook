@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
+// use wasm_bindgen::prelude::*;
 
 mod course;
+mod requirements;
 mod utlis;
 #[derive(Serialize, Deserialize)]
 pub struct JSONCourseList {
@@ -27,18 +28,18 @@ pub struct JSONCourse {
     pub is_multiterm: bool,
 }
 
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+// #[cfg(feature = "wee_alloc")]
+// #[global_allocator]
+// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-#[wasm_bindgen]
-pub fn getProgramInfo(code: String) {
+// #[wasm_bindgen]
+// pub fn getProgramInfo(code: String) {
 
-}
-#[wasm_bindgen]
-pub fn getCourseInfo(code: String) {
+// }
+// #[wasm_bindgen]
+// pub fn getCourseInfo(code: String) {
     
-}
+// }
 
 
 
