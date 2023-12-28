@@ -9,7 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/user/user.model';
 import { JwtAuthService } from 'src/jwt.service';
-import { authResponse, loginResponse } from './auth.dto';
+import { authResponse, loginResponse, registerResponse } from './auth.dto';
 
 
 @Injectable()
@@ -26,38 +26,43 @@ export class AuthService {
   });
   */
 
-  async register(user: { username: string; password: string; confirmPassword: string }): Promise<loginResponse> {
+  async register(user: { username: string; password: string; confirmPassword: string }): Promise<registerResponse> {
     const { username, password, confirmPassword } = user;
 
     // 检查密码和确认密码是否匹配
     if (password !== confirmPassword) {
-      return new loginResponse(404, 'Password and confirm password do not match');
+      return new registerResponse(404, 'Password and confirm password do not match');
     }
     // 检查email必须为z + 7位数字 + @ad.unsw.edu.au格式
     const emailRegex = /^z\d{7}@ad\.unsw\.edu\.au$/;
     if (!emailRegex.test(username)) {
-      return new loginResponse(404, 'wrong email format');
+      return new registerResponse(404, 'wrong email format');
     }
 
     // 密码要包含大小写字母加数字，长度大于等于8位
     const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/;
     if (!passwordRegex.test(password)) {
-      return new loginResponse(404, 'Password must contain at least 8 characters, including uppercase, lowercase and numbers');
+      return new registerResponse(404, 'Password must contain upper and lower case letters and numbers, eight or more digits');
     }
 
     // 检查用户是否已经存在于MongoDB数据库中
     const existingUser = await this.userModel.findOne({ username: username });
     if (existingUser) {
-      return new loginResponse(404, 'User already exists');
+      return new registerResponse(404, 'User already exists');
     }
 
     // 将用户添加到MongoDB数据库中
-    const newUser = new this.userModel({ username, password });
-    await newUser.save();
+    //const newUser = new this.userModel({ username, password });
+    //await newUser.save();
+
+    
+    const userData: { username: string; password: string } = { username, password };
+    const result = new registerResponse(200, 'Register successful');
+    result.userData = userData;
 
     // 生成token
-    const token = await this.jwtService.generateToken(username);
-    return { statusCode: 200, message: 'Register successful', token };
+    //const token = await this.jwtService.generateToken(username);
+    return result;
   }
 
   async sendVerificationCode(user: { email: string }): Promise<any> {
@@ -85,28 +90,23 @@ export class AuthService {
 
   }
 
-  async submitNickname(user: { token: string; vertificationCode: string; nickName: string}): Promise<authResponse> {
-    // 检查用户是否存在于MongoDB数据库中
-    const { token, vertificationCode, nickName } = user;
-    // 解析token
-    const username = await this.jwtService.verifyToken(token);
-    console.log(username);
-    const existingUser = await this.userModel.findOne({ username: username });
-    if (!existingUser) {
-      return new authResponse(404, 'User does not exist');
-    }
+  async submitNickname(user: {userData: { username: string; password: string }; vertificationCode: string; nickName: string}): Promise<loginResponse> {
+    const {userData, vertificationCode, nickName } = user;
 
     // 检查验证码是否正确
     if (vertificationCode !== '123456') {
-      return new authResponse(404, 'Verification code is incorrect');
+      return new loginResponse(404, 'Verification code is incorrect');
     }
 
-    // 将用户昵称更新到MongoDB数据库中
-    existingUser.nickname = nickName;
-    await existingUser.save();
+    // 将用户添加到MongoDB数据库中
+    const newUser = new this.userModel({ username: userData.username, password: userData.password, nickname: nickName });
+    await newUser.save();
+
+    //创建token
+    const token = await this.jwtService.generateToken(userData.username);
 
     // 返回提交昵称成功的信息
-    return new authResponse(200, 'Submit nickname successful');
+    return new loginResponse(200, 'Submit nickname successful', token);
   }
 
 
@@ -123,7 +123,6 @@ export class AuthService {
     }
     // console.log(existingUser)
     const token = await this.jwtService.generateToken(username);
-    new loginResponse(200, 'Login successful', token);
 
     return new loginResponse(200, 'Login successful', token);
   }

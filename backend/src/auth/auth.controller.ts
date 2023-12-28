@@ -2,7 +2,7 @@
 
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { authResponse, loginBodyDto, loginResponse, nickNameBodyDto, registerBodyDto } from './auth.dto';
+import { authResponse, loginBodyDto, loginResponse, nickNameBodyDto, registerBodyDto, registerResponse, sendVerificationCodeDto } from './auth.dto';
 import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('auth')
@@ -14,7 +14,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'register success',
-    type: loginResponse
+    type: registerResponse
   })
   async register(@Body() body: registerBodyDto): Promise<any> {
     return this.authService.register(body);
@@ -27,7 +27,7 @@ export class AuthController {
     description: 'register success',
     type: authResponse
   })
-  async sendVerificationCode(@Body() body: { email: string }): Promise<any> {
+  async sendVerificationCode(@Body() body: sendVerificationCodeDto): Promise<any> {
 
     return await this.authService.sendVerificationCode(body);
   }
@@ -37,7 +37,7 @@ export class AuthController {
   @ApiResponse({
       status: 200,
       description: 'submit nickname success',
-      type: authResponse
+      type: loginResponse
   })
   async submitNickname(@Body() body: nickNameBodyDto): Promise<any> {
     return this.authService.submitNickname(body);
