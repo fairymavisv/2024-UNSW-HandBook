@@ -22,4 +22,5 @@ impl Requirements {
 // aaa or bbb or, acc
 // WAM of 
 // faculty UNSW Global
-// labelling until EDST6771
+// labelling until INFS4858 34637
+// 
