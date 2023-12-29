@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 mod course;
 mod requirements;
 mod utlis;
+mod program;
 #[derive(Serialize, Deserialize)]
 pub struct JSONCourseList {
     pub courses: Vec<JSONCourse>,

@@ -21,11 +21,11 @@ pub struct Course {
     study_level: StudyLevel,
     offering_terms: Vec<OfferingTerm>,
     campus: Campus,
-    requirements: Requirements,
+    requirements: Option<Requirements>,
 } 
 
 impl Course {
-    pub fn new(title: String, code: String, uoc: u8, level: u8, study_level: StudyLevel, offering_terms: Vec<OfferingTerm>, campus: Campus, requirements: Requirements) -> Course {
+    pub fn new(title: String, code: String, uoc: u8, level: u8, study_level: StudyLevel, offering_terms: Vec<OfferingTerm>, campus: Campus, requirements: Option<Requirements>) -> Course {
         Course {
             title,
             code: CourseCode::from_str(&code).expect(format!("Invalid course code: {}", code).as_str()),
@@ -59,7 +59,7 @@ impl Course {
     pub fn campus(&self) -> &Campus {
         &self.campus
     }
-    pub fn requirements(&self) -> &Requirements {
+    pub fn requirements(&self) -> &Option<Requirements> {
         &self.requirements
     }
 
@@ -92,7 +92,7 @@ impl CourseManager {
             let study_level = StudyLevel::from_str(&json_course.study_level).expect(format!("Unexpected study level: {}", json_course.study_level).as_str());
             let offering_terms = json_course.terms.iter().filter_map(|term| OfferingTerm::from_str(term)).collect::<Vec<OfferingTerm>>();
             let campus = Campus::from_str(&json_course.campus).expect(format!("Unexpected campus: {}", json_course.campus).as_str());
-            let requirements = Requirements::parse(&json_course.raw_requirements);
+            let requirements = Requirements::parse(Requirements::tokenize(&json_course.raw_requirements));
             Course::new(title, code, uoc, level, study_level, offering_terms, campus, requirements)
         }).map(|course| (course.code.to_string(), course)).collect();
         course_list

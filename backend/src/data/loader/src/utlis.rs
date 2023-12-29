@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 
+#[derive(Debug)]
 pub struct ProgramCode {
     code: [char; 4],
 }
@@ -36,6 +37,7 @@ impl ProgramCode {
     }
 }
 
+#[derive(Debug)]
 pub struct CourseCode {
     school_code: [char; 4],
     course_code: [char; 4],
