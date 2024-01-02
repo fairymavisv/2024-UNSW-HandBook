@@ -16,9 +16,9 @@
                 <button @click="enter">Enter</button>
             </div>
             <p id="tip">
-                {{ isRegister ? 'Already' : 'Don\'t' }} have an account?
-                <router-link :to="isRegister ? '/login' : '/register'">Go {{ isRegister ? 'login' :
-                    'register' }}</router-link>
+                {{ isRegister ? "Already" : "Don't" }} have an account?
+                <router-link :to="isRegister ? '/login' : '/register'">Go {{ isRegister ? "login" : "register"
+                }}</router-link>
             </p>
         </div>
     </div>
@@ -28,16 +28,16 @@
 export default {
     data() {
         return {
-            email: '',
-            password: '',
-            confirmPass: '',
-            name: ''
-        }
+            email: "",
+            password: "",
+            confirmPass: "",
+            name: "",
+        };
     },
 
     computed: {
         isRegister() {
-            return this.$route.path === '/register';
+            return this.$route.path === "/register";
         },
 
         validEmail() {
@@ -59,8 +59,8 @@ export default {
         async enter() {
             if (!this.validEmail) {
                 this.$message({
-                    message: 'Invalid email. Please use your offical UNSW email address',
-                    type: 'warning'
+                    message: "Invalid email. Please use your offical UNSW email address",
+                    type: "warning",
                 });
                 return;
             }
@@ -68,8 +68,9 @@ export default {
             if (this.isRegister) {
                 if (!this.validPassword) {
                     this.$message({
-                        message: 'Invalid password. Password must be at least 8 characters long, contain at least 1 uppercase letter, 1 lowercase letter and 1 number',
-                        type: 'warning'
+                        message:
+                            "Invalid password. Password must be at least 8 characters long, contain at least 1 uppercase letter, 1 lowercase letter and 1 number",
+                        type: "warning",
                     });
 
                     return;
@@ -77,8 +78,8 @@ export default {
 
                 if (!this.validConfirmPass) {
                     this.$message({
-                        message: 'Passwords do not match.',
-                        type: 'warning'
+                        message: "Passwords do not match.",
+                        type: "warning",
                     });
                     return;
                 }
@@ -87,27 +88,27 @@ export default {
             const { email: username, password, name } = this;
 
             const data = await this.$fetchReq(
-                'auth/' + (this.isRegister ? 'register' : 'login'),
-                'POST',
+                "auth/" + (this.isRegister ? "register" : "login"),
+                "POST",
                 { username, password, name }
             );
 
             if (data.error) {
                 this.$message({
                     message: data.error,
-                    type: 'error'
+                    type: "error",
                 });
             } else {
                 this.$message({
-                    message: 'Success',
-                    type: 'success'
+                    message: "Success",
+                    type: "success",
                 });
 
-                localStorage.setItem('token', data.token);
-                this.$router.push('/courseList');
+                localStorage.setItem("token", data.token);
+                this.$router.push("/courseList");
             }
-        }
-    }
+        },
+    },
 };
 </script>
 
@@ -116,13 +117,12 @@ export default {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-
 }
 
 #background {
-    padding: 0.1px;
+    padding-top: 0.1px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='a' gradientUnits='userSpaceOnUse' x1='100' y1='33' x2='100' y2='-3'%3E%3Cstop offset='0' stop-color='%23000' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='1'/%3E%3C/linearGradient%3E%3ClinearGradient id='b' gradientUnits='userSpaceOnUse' x1='100' y1='135' x2='100' y2='97'%3E%3Cstop offset='0' stop-color='%23000' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='%2354aecd' fill-opacity='0.6'%3E%3Crect x='100' width='100' height='100'/%3E%3Crect y='100' width='100' height='100'/%3E%3C/g%3E%3Cg fill-opacity='0.5'%3E%3Cpolygon fill='url(%23a)' points='100 30 0 0 200 0'/%3E%3Cpolygon fill='url(%23b)' points='100 100 0 130 0 100 200 100 200 130'/%3E%3C/g%3E%3C/svg%3E");
-    background-color: #77CFEE;
+    background-color: #77cfee;
     height: 100vh;
     width: 100vw;
 }
@@ -158,7 +158,7 @@ input {
     width: 100%;
     height: 45px;
     padding-left: 10px;
-    font-size: 16px
+    font-size: 16px;
 }
 
 input::placeholder {
