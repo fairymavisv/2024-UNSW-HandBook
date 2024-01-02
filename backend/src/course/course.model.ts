@@ -14,15 +14,19 @@ export interface ExtendedComment {
     text: string;      // 评论文本
     userId: string | mongoose.Schema.Types.ObjectId; // 用户ID
     updatedAt: Date;   // 最后修改时间
-    rating: number;    // 评分
+    difficulty: number;    // 难度评分
+    usefulness: number;    // 有用程度评分
+    workload: number;    // 工作量评分
     username?: string; // 关联的用户名
 }
 
 export interface Comment extends mongoose.Document {
     text: string;      // 评论文本
-    rating: number;    // 评分
     userId: mongoose.Schema.Types.ObjectId; // 用户ID
     updatedAt: Date;   // 最后一次修改时间
+    difficulty: number;    // 难度评分
+    usefulness: number;    // 有用程度评分
+    workload: number;    // 工作量评分
 }
 
 export interface CourseInfo {
@@ -41,7 +45,9 @@ export const commentSchema = new mongoose.Schema({
     text: { type: String, required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     updatedAt: { type: Date, default: Date.now }, // 保留最后一次修改的时间
-    rating: { type: Number, min: 0, max: 5, required: true },
+    difficulty: { type: Number, required: true },
+    usefulness: { type: Number, required: true },
+    workload: { type: Number, required: true },
 },{collection: 'course'});
 
 commentSchema.index({ updatedAt: -1 }); // -1 表示降序索引

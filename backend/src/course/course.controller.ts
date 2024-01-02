@@ -40,21 +40,13 @@ export class CourseController {
         description: 'The Course details',
         type: CreateCommentDto, // 指定返回的类型是 UserDto
     })
-    async createCourseComment(@Body() createCommentDto: CreateCommentDto){
+    async createCourseComment(@Body() createCommentDto: CreateCommentDto) {
         try {
-            const { courseCode, userId, text, rating } = createCommentDto;
-            //统一将输入的 code 转化为大写
-            const upperCaseCode = courseCode.toUpperCase();
-            console.log(createCommentDto);
-            console.log("upperCaseCode", upperCaseCode);
-
-            const comment = await this.programService.createCourseComment(upperCaseCode, userId, text, rating);
-            if (!comment) {
-                throw new HttpException('create comment failed', HttpStatus.NOT_FOUND);
-            }
+            const comment = await this.programService.createCourseComment(createCommentDto);
             return comment;
         } catch (error) {
-            throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+            // Handle exceptions thrown by the service
+            throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
