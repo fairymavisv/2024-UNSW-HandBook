@@ -2,7 +2,8 @@ import {Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put} from
 import { UserService } from './user.service';
 import {User} from "./user.model";
 import {ApiResponse} from "@nestjs/swagger";
-import {UserDto} from "./user.dto";
+import {createProfileDto, UserDto} from "./user.dto";
+
 
 @Controller('users')
 export class UserController {
@@ -24,6 +25,22 @@ export class UserController {
             return user;
         } catch (error) {
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Post('createProfile')
+    @ApiResponse({ status: 500, description: 'internal error' })
+    @ApiResponse({
+        status: 200,
+        description: 'create user profile success',
+        type: String, // 返回成功信息
+    })
+    async createUser(@Body() user:createProfileDto): Promise<string> {
+        try {
+            const ret = await this.userService.createUser(user);
+            return ret;
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -79,4 +96,6 @@ export class UserController {
             throw new HttpException('Failed to update course status', HttpStatus.BAD_REQUEST);
         }
     }
+
+    //TODO:有没有必要添加删除个人课表功能
 }

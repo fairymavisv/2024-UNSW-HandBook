@@ -42,7 +42,7 @@ export const commentSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     updatedAt: { type: Date, default: Date.now }, // 保留最后一次修改的时间
     rating: { type: Number, min: 0, max: 5, required: true },
-});
+},{collection: 'course'});
 
 commentSchema.index({ updatedAt: -1 }); // -1 表示降序索引
 

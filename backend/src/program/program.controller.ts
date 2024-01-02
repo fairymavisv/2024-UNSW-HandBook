@@ -14,7 +14,8 @@ export class ProgramController {
     @ApiResponse({
         status: 200,
         description: 'The user details',
-        type: ProgramDto, // 指定返回的类型是 UserDto
+        type: String, // 指定返回的类型是 UserDto
+        isArray: true
     })
     async getProgramInfo(@Param('programCode') programCode: string) {
         try {

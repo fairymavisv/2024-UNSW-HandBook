@@ -1,7 +1,7 @@
-import {Controller, Get, Post, HttpException, HttpStatus, Param, Put, Query, Body} from '@nestjs/common';
+import {Controller, Get, Post, HttpException, HttpStatus, Param, Put, Query, Body, Delete} from '@nestjs/common';
 import {CourseService } from './course.service';
 import {ApiOperation, ApiResponse} from "@nestjs/swagger";
-import {CommentDto, CourseDto, CreateCommentDto} from "./course.dto";
+import {CommentDto, CourseDto, CreateCommentDto, } from "./course.dto";
 
 
 
@@ -57,4 +57,27 @@ export class CourseController {
             throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @Delete("comment")
+    @ApiOperation({ summary: 'delete Course comment' })
+    @ApiResponse({ status: 404, description: 'Course code not found' })
+    @ApiResponse({
+        status: 200,
+        description: 'The Course details',
+        type: String,
+    })
+    async deleteCourseComment(@Query("deleteCommentID") deleteCommentID: string){
+        try {
+
+            const ret = await this.programService.deleteCourseComment(deleteCommentID);
+            if (!ret) {
+                throw new HttpException('delete comment failed', HttpStatus.NOT_FOUND);
+            }
+            return ret;
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 }

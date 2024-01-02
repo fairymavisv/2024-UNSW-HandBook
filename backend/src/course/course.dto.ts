@@ -15,6 +15,11 @@ export class CommentDto {
     public username?: string;
 }
 
+//
+// export class DeleteCommentDto {
+//     public deleteCommentId: string;
+// }
+//
 
 export class CreateCommentDto {
     //顺序跟前端传过来的顺序一致
