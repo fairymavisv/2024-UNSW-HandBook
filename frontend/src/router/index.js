@@ -29,7 +29,7 @@ const routes = [
     name: 'home',
     component: HomeView
   },
-  
+
   {
     path: '/courseList',
     name: 'courseList',
