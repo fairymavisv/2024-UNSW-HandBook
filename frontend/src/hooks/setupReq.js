@@ -11,5 +11,6 @@ export default function (callback, ...args) {
         data.value = callback(courseList)
     })
 
+    // $fetchReq(...args).then(respData => data.value = callback(respData))
     return data
 }
