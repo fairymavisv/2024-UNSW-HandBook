@@ -5,8 +5,14 @@ export class CommentDto {
     @ApiProperty({ example: 'This course is great!', description: 'The text of the comment' })
     public text: string;
 
-    @ApiProperty({ example: 5, description: 'The rating given by the user' })
-    public rating: number;
+    @ApiProperty({ example: '4', description: 'The difficulty of the course' })
+    public difficulty: number;
+
+    @ApiProperty({ example: '5', description: 'The usefulness of the course' })
+    public usefulness: number;
+
+    @ApiProperty({ example: '3', description: 'The workload of the course' })
+    public workload: number;
 
     @ApiProperty({ example: '2021-04-01T00:00:00.000Z', description: 'The date and time the comment was last updated' })
     public updatedAt: Date;
@@ -21,8 +27,23 @@ export class CommentDto {
 // }
 //
 
+// export class CreateCommentDto {
+//     //顺序跟前端传过来的顺序一致
+//     @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })
+//     courseCode: string;
+//
+//     @ApiProperty({ example: '1234567890abcdef', description: 'The ID of the user' })
+//     userId: string;
+//
+//     @ApiProperty({ example: 'This course is great!', description: 'The text of the comment' })
+//     text: string;
+//
+//     @ApiProperty({ example: 5, description: 'The rating given by the user' })
+//     rating: number;
+//
+// }
+
 export class CreateCommentDto {
-    //顺序跟前端传过来的顺序一致
     @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })
     courseCode: string;
 
@@ -32,8 +53,15 @@ export class CreateCommentDto {
     @ApiProperty({ example: 'This course is great!', description: 'The text of the comment' })
     text: string;
 
-    @ApiProperty({ example: 5, description: 'The rating given by the user' })
-    rating: number;
+    // New rating dimensions
+    @ApiProperty({ example: 4, description: 'The difficulty rating given by the user' })
+    difficulty: number;
+
+    @ApiProperty({ example: 5, description: 'The usefulness rating given by the user' })
+    usefulness: number;
+
+    @ApiProperty({ example: 3, description: 'The workload rating given by the user' })
+    workload: number;
 }
 
 
