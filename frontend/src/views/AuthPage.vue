@@ -4,18 +4,24 @@
             <div id="form">
                 <h1>{{ $route.path.slice(1) }}</h1>
                 <p>Email</p>
-                <input placeholder="zid@ad.unsw.edu.au" v-model="email" />
+                <input placeholder="zid@ad.unsw.edu.au" v-model="email" :disabled="waitVerify" />
                 <p>Password</p>
-                <input type="password" placeholder="password" v-model="password" />
+                <input type="password" placeholder="password" v-model="password" :disabled="waitVerify" />
                 <template v-if="isRegister">
                     <p>Confirm Password</p>
-                    <input type="password" placeholder="confirm password" v-model="confirmPass" />
-                    <p>Account Name</p>
-                    <input placeholder="name" v-model="name" />
+                    <input type="password" placeholder="confirm password" v-model="confirmPass" :disabled="waitVerify" />
                 </template>
-                <button @click="enter">Enter</button>
+                <template v-if="waitVerify">
+                    <p>Vertification Code</p>
+                    <input v-model="code" />
+
+                    <!-- <div style="margin-top: 30px; text-align: left; font-size: 16px">
+                        Vertification Code: <input  style="width: 50%; height: 30px" v-model="code"/>
+                    </div> -->
+                </template>
+                <button @click="enter">{{ buttonText }}</button>
             </div>
-            <p id="tip">
+            <p id="tip" v-if="!waitVerify">
                 {{ isRegister ? "Already" : "Don't" }} have an account?
                 <router-link :to="isRegister ? '/login' : '/register'">Go {{ isRegister ? "login" : "register"
                 }}</router-link>
@@ -31,7 +37,9 @@ export default {
             email: "",
             password: "",
             confirmPass: "",
-            name: "",
+
+            waitVerify: false,
+            code: ""
         };
     },
 
@@ -53,19 +61,44 @@ export default {
         validConfirmPass() {
             return this.password === this.confirmPass;
         },
+
+        validCode() {
+            const regex = /^[0-9]{6}$/;
+            return regex.test(this.code);
+        },
+
+        buttonText() {
+            if (!this.isRegister) return "Enter";
+            if (this.waitVerify) return "Enter";
+            return "Get Vertification Code";
+        },
     },
 
     methods: {
-        async enter() {
+        validatingInput() {
             if (!this.validEmail) {
                 this.$message({
-                    message: "Invalid email. Please use your offical UNSW email address",
+                    message: "Invalid email. Please use your offical UNSW email address (zid@ad.unsw.edu.au)",
                     type: "warning",
                 });
-                return;
+                return false;
             }
 
-            if (this.isRegister) {
+            // 如果是登录界面，就不用验证密码和确认密码了
+            if (!this.isRegister) return true;
+
+
+            if (this.waitVerify) {
+                // 如果是等着收验证码，那么就验证验证码
+                if (!this.validCode) {
+                    this.$message({
+                        message: "Invalid verification code.",
+                        type: "warning",
+                    });
+                    return false;
+                }
+            } else {
+                // 如果是注册界面，就验证密码和确认密码
                 if (!this.validPassword) {
                     this.$message({
                         message:
@@ -73,7 +106,7 @@ export default {
                         type: "warning",
                     });
 
-                    return;
+                    return false;
                 }
 
                 if (!this.validConfirmPass) {
@@ -81,31 +114,72 @@ export default {
                         message: "Passwords do not match.",
                         type: "warning",
                     });
-                    return;
+                    return false;
                 }
             }
 
-            const { email: username, password, name } = this;
+            return true
+        },
 
-            const data = await this.$fetchReq(
-                "auth/" + (this.isRegister ? "register" : "login"),
-                "POST",
-                { username, password, name }
-            );
+        auth() {
+            this.$fetchReq("auth/" + this.isRegister ? 'register' : 'login', "POST", {
+                username: this.email,
+                password: this.password,
+                code: this.code
+            }).then((data) => {
+                if (data.error) {
+                    this.$message({
+                        message: data.error,
+                        type: "error",
+                    });
+                } else {
+                    this.$message({
+                        message: this.isRegister ? 'Register' : 'Login' + " success",
+                        type: "success",
+                    });
 
-            if (data.error) {
-                this.$message({
-                    message: data.error,
-                    type: "error",
-                });
+                    localStorage.setItem("token", data.token);
+                    this.$router.push("/courseList");
+                }
+            });
+        },
+
+        verify() {
+            // this.$fetchReq("auth/submitVertification", "POST", { username: this.email }).then((data) => {
+            //     if (data.error) {
+            //         this.$message({
+            //             message: data.error,
+            //             type: "error",
+            //         });
+            //     } else {
+            //         this.$message({
+            //             message: "Vertification code sent, please check your email",
+            //             type: "success",
+            //         });
+
+            //         this.waitVerify = true;
+            //     }
+            // });
+
+            this.waitVerify = true;
+        },
+
+        enter() {
+            // 先验证输入，不管是登录，还是等着收验证码，还是带着验证码去注册，都需要
+            if (!this.validatingInput()) return;
+
+            // 如果是登录界面，直接登录
+            if (!this.isRegister) {
+                this.auth();
+                return;
+            }
+
+            if (!this.waitVerify) {
+                // 如果是注册界面，先申请发验证码
+                this.verify();
             } else {
-                this.$message({
-                    message: "Success",
-                    type: "success",
-                });
-
-                localStorage.setItem("token", data.token);
-                this.$router.push("/courseList");
+                // 如果已经有验证码了，直接注册
+                this.auth()
             }
         },
     },
@@ -128,9 +202,7 @@ export default {
 }
 
 #container {
-    margin-top: 100px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 100px auto 0;
     /* border: 1px solid black; */
     width: 50%;
     background-color: white;
@@ -146,7 +218,7 @@ export default {
 
 #form p {
     text-align: left;
-    margin: 20px 0 5px 0;
+    margin: 20px 0 5px;
     font-size: 20px;
 }
 
