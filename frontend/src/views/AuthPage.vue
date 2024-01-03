@@ -145,23 +145,23 @@ export default {
         },
 
         verify() {
-            // this.$fetchReq("auth/submitVertification", "POST", { username: this.email }).then((data) => {
-            //     if (data.error) {
-            //         this.$message({
-            //             message: data.error,
-            //             type: "error",
-            //         });
-            //     } else {
-            //         this.$message({
-            //             message: "Vertification code sent, please check your email",
-            //             type: "success",
-            //         });
+            this.$fetchReq("auth/submitVertification", "POST", { username: this.email }).then((data) => {
+                if (data.error) {
+                    this.$message({
+                        message: data.error,
+                        type: "error",
+                    });
+                } else {
+                    this.$message({
+                        message: "Vertification code sent, please check your email",
+                        type: "success",
+                    });
 
-            //         this.waitVerify = true;
-            //     }
-            // });
+                    this.waitVerify = true;
+                }
+            });
 
-            this.waitVerify = true;
+            // this.waitVerify = true;
         },
 
         enter() {
