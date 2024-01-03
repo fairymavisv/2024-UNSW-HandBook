@@ -1,14 +1,21 @@
 use core::num;
 
 use rayon::iter;
+use wasm_bindgen::convert::OptionIntoWasmAbi;
 
 use crate::{course::Course, utlis::{CourseCode, ProgramCode}};
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Requirements {
-    raw_requirements: String,
+    contents: Option<Box<dyn Node + Send>>
 
 }
+
+// #[derive(Debug)]
+// pub enum RequirementContent {
+//     Binary(BinaryNode),
+//     Singel(Box<dyn Node>)
+// }
 
 #[derive(Debug)]
 pub enum Keyword {
@@ -61,9 +68,17 @@ macro_rules! extract_prerequisite {
 }
 
 impl Requirements {
-    pub fn new(raw_requirements: String) -> Requirements {
-        Requirements {
-            raw_requirements,
+    pub fn try_new(raw_requirements: String) -> Option<Requirements> {
+        let cleaned_requirements = Requirements::clean(raw_requirements.as_str());
+        let mut tokens = Requirements::tokenize(cleaned_requirements.as_str());
+        let node = Requirements::parse(&mut tokens);
+        if node.is_err() {
+            println!("{}", node.err().unwrap());
+            None
+        } else {
+            Some(Requirements {
+                contents: node.unwrap()
+            })
         }
     }
 
@@ -74,6 +89,7 @@ impl Requirements {
             .replace(")", " ) ")
             .replace(",", " , ")
             .replace(".", " ")
+            .replace("+", "")
             .replace("<br/>", "\n");
         for line in cleaned_lines.lines() {
             let trimed = line.trim();
@@ -86,10 +102,10 @@ impl Requirements {
             
     }
 
-    pub fn tokenize(raw_requirements: &str) -> Vec<Token> {
-        let cleanned_requirements = Requirements::clean(raw_requirements);
+    fn tokenize(raw_requirements: &str) -> Vec<Token> {
+        // let cleanned_requirements = Requirements::clean(raw_requirements);
         let mut tokens: Vec<Token> = Vec::new();
-        let mut itr = cleanned_requirements.split_ascii_whitespace();
+        let mut itr = raw_requirements.split_ascii_whitespace();
         loop {
             let word = itr.next();
             if word.is_none() {
@@ -102,7 +118,7 @@ impl Requirements {
                 "and" | "AND" | "And" => {
                     tokens.push(Token::OPERATOR(Operator::AND));
                 },
-                "UOC" | "uoc" | "Uoc" => {
+                "UOC" | "uoc" | "Uoc" | "UOCs" => {
                     tokens.push(Token::KEYWORD(Keyword::UOC));
                 },
                 "WAM" | "wam" => {
@@ -166,12 +182,15 @@ impl Requirements {
     }
 
 
-    pub fn parse(mut tokens: Vec<Token>) -> Option<Requirements> {
+
+    fn parse(tokens: &mut Vec<Token>) -> Result<Option<Box<dyn Node + Send>>, String> {
         // let mut tokens = Requirements::tokenize(raw_requirements);
+        // let requirement = Requirements::new(String::from("raw_requirements"));
         if tokens.len() == 0 {
-            return None;
+            return Ok(None);
         }
-        let mut buffer: Vec<Box<dyn Node>> = Vec::new();
+        let mut buffer: Vec<Box<dyn Node + Send>> = Vec::new();
+        let mut parsed_node: Vec<Box<dyn Node + Send>> = Vec::new();
         loop {
             tokens.reverse();
             let token = tokens.pop();
@@ -187,10 +206,26 @@ impl Requirements {
                     println!("{:?}", code);
                     buffer.push(Box::new(CodeNode::new(code)));
                 },
+                Token::OPERATOR(operator) => {
+                    println!("{:?}", operator);
+                    if buffer.len() == 1 {
+                        let left = buffer.pop().unwrap();
+                        let right = Requirements::parse(tokens)?;
+                        if right.is_none() {
+                            buffer.push(left);
+                        } else {
+                            let binary = BinaryNode::new(left, right.unwrap(), operator);
+                            buffer.push(Box::new(binary));
+                        }
+                    } else {
+                        return Err(String::from("ERROR (BIN-1): Binary operator (e.g and, or) without left hand side, or more than one left hand side token."));
+                    }
+                },
                 Token::NUMBER(number) => {
                     println!("{}", number);
                     let next = tokens.pop();
                     if next.is_none() {
+                        println!("Warning (NUM-1): Number without following token.");
                         break;
                     }
                     match next.unwrap() {
@@ -199,6 +234,7 @@ impl Requirements {
                                 Keyword::UOC => { 
                                     let position = tokens.last();
                                     if position.is_none() {
+                                        buffer.push(Box::new(UOCNode::new(number)));
                                         continue;
                                     }
                                     match position.unwrap() {
@@ -206,94 +242,174 @@ impl Requirements {
                                             match preposition {
                                                 Preposition::FROM => {
                                                     let mut node = Box::new(UOCFromNode::new(number ));
-                                                    if node.parse(&mut tokens) {
+                                                    if node.parse(tokens)? == () {
                                                         buffer.push(node);
 
                                                     }
                                                 },
                                                 Preposition::AT => {
                                                     let mut node = Box::new(UOCAtLevelNode::new(number ));
-                                                    if node.parse(&mut tokens) {
+                                                    if node.parse(tokens)? == () {
                                                         buffer.push(node);
                                                     }
                                                 },
-                                                _ => ()
+                                                _ => println!("Warning (UOC-1): Only FROM and AT can be followed by a UOC number")
                                             }
                                         },
-                                        _ => {
-                                            buffer.push(Box::new(UOCNode::new(number)));
-                                        }
+                                        _ => println!("Warning (UOC-1): Only preposition (FROM and AT) can be followed by a UOC number")
                                     }
 
                                 },
                                 Keyword::WAM => {
                                     buffer.push(Box::new(WamNode::new(number)));
                                 },
-                                _ => ()
+                                _ => println!("Warning (NUM-2): Only WAM and UOC can be followed by a number"),
                                 
                             }
                         },
-                        
                         _ => {
-                            println!("Other");
-                            dbg!(tokens);
-                            return None;
+                            println!("Warning (NUM-3): Only Keywords WAM and UOC can be followed by a number");
                         }
                     }
 
                 },
                 Token::COMMA => {
-                    // TODO 
-                    // Parse buffer into binary node
+                    if buffer.len() == 1 {
+                        parsed_node.push(buffer.pop().unwrap());
+
+                    } else if buffer.len() > 1 {
+                        return Err(String::from("ERROR (COM-1): There are more than one node in the buffer."));
+                    }                     
                     println!(",");
                 },
                 Token::BRACKET(bracket) => {
                     println!("{:?}", bracket);
-                    // TODO
-                    // Recursively parse nodes in tokens
+                    let mut num_bracket = 1;
+                    let mut sub_token: Vec<Token> = Vec::new();
+                    while num_bracket != 0 {
+                        let token = tokens.pop();
+                        if let Some(token) = token {
+                            match &token {
+                                Token::BRACKET(bracket) => {
+                                    match bracket {
+                                        Bracket::OPEN => num_bracket += 1,
+                                        Bracket::CLOSE => num_bracket -= 1
+                                    }
+                                }
+                                _ => ()
+                            }
+                            sub_token.push(token);
+                        } else {
+                            return Err(String::from("ERROR (BRA-1): Unclose bracket."));
+                        }
+                    }
+
+                    let node = Requirements::parse(&mut sub_token)?;
+                    if let Some(node) = node {
+                        buffer.push(node);
+                    }
 
                 },
                 Token::KEYWORD(keyword) => {
                     match keyword {
                         Keyword::WAM => {
                             let mut node = Box::new(WamNode::new(0));
-                            if node.parse(&mut tokens) {
+                            if node.parse(tokens)? == () {
                                 buffer.push(node);
                             }
                         },
-                        _ => ()
+                        _ => println!("Warning (KEY-1): Keyword {} is not supported yet", "keyword"),
                     }
                     println!("{:?}", keyword);
                 },
-                _  => {
-                    println!("Other");
-                    dbg!(tokens);
-                    return None;
-                }
+                _  => ()
             }
         }
+        if buffer.len() == 1 {
+            parsed_node.push(buffer.pop().unwrap());
+        } else if buffer.len() > 1 {
+            return Err(String::from("ERROR (COM-1): There are more than one node in the buffer."));
+        }
 
-        todo!()
-        // Requirements {
-
-        // }
+        if parsed_node.len() == 1 {
+            return Ok(Some(parsed_node.pop().unwrap()));
+        } else if parsed_node.len() > 1 {
+            return Ok(Some(Box::new(ListNode::new_from_nodes(parsed_node))));
+        } else {
+            return Ok(None);
+        }
     }
 }
 
 pub trait Node {
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool;
+    fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
+        Ok(())
+    }
 
+    fn get(&self) -> String;
+
+}
+
+
+
+// #[derive(Debug)]
+
+// node, node, node
+struct ListNode {
+    nodes: Vec<Box<dyn Node + Send>>,
+}
+
+impl ListNode {
+    fn new(nodes: &mut Vec<Box<dyn Node + Send>>) -> Self {
+        ListNode {
+            nodes: nodes.drain(..).collect(),
+        }
+    }
+    fn new_from_nodes(nodes: Vec<Box<dyn Node + Send>>) -> Self {
+        ListNode {
+            nodes,
+        }
+    }
+}
+
+impl Node for ListNode {
+    fn get(&self) -> String {
+        format!("Require all of following requirement: {}", self.nodes.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
+    }
 }
 
 // TODO 
 // BABS2204 OR BABS2264 OR BIOC2201
-// (BABS2204 OR BABS2264) OR BIOC2201
+// Node or Node and Node, And Node
+// (BABS2204 OR (BABS2264 OR BIOC2201)) and (BABS2204 OR (BABS2264 OR BIOC2201)
 // OR OR BABS2204 BABS2264  BIOC2201
-
-struct BinaryNode {
-    left: Box<dyn Node>,
-    right: Box<dyn Node>,
+pub struct BinaryNode {
+    left: Box<dyn Node + Send>,
+    right: Box<dyn Node + Send>,
     operator: Operator,
+}
+
+impl BinaryNode {
+    pub fn new(left: Box<dyn Node + Send>, right: Box<dyn Node + Send>, operator: Operator) -> BinaryNode {
+        BinaryNode {
+            left,
+            right,
+            operator,
+        }
+    }
+    // fn parse(&mut self, tokens: &mut Vec<Box<dyn Node>>) -> bool {
+    //     true
+    // }
+}
+
+impl Node for BinaryNode {
+    fn get(&self) -> String {
+        format!("({} {} {})", self.left.get(), match self.operator {
+            Operator::AND => "and",
+            Operator::OR => "or",
+        }, self.right.get())
+    
+    }
 }
 
 
@@ -312,11 +428,11 @@ impl UOCAtLevelNode {
 }
 impl Node for UOCAtLevelNode {
 
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool {
+    fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         tokens.pop();
         let token = tokens.pop();
         if token.is_none() {
-            return false;
+            return Err(String::from("ERROR (UOC-2A): UOC at level without following level keyword"));
         }
         match token.unwrap() {
             Token::KEYWORD(keyword) => {
@@ -324,26 +440,27 @@ impl Node for UOCAtLevelNode {
                     Keyword::LEVEL => {
                         let token = tokens.pop();
                         if token.is_none() {
-                            return false;
+                            return Err(String::from("ERROR (UOC-2B): UOC at level without following level number"));
                         }
-
 
                         match token.unwrap() {
                             Token::NUMBER(level) => {
                                 self.level = level;
-                                return true;
+                                return Ok(());
                             },
-                            _ => return false,
+                            _ => return Err(String::from("ERROR (UOC-2C): UOC at level without following level number")),
                         }
                     },
-                    _ => return false,
+                    _ => return Err(String::from("ERROR (UOC-2D): UOC at level without following level keyword")),
                 }
             },
-            _ => return false,
+            _ => return Err(String::from("ERROR (UOC-2E): UOC at level without following level keyword")),
         }
     }
 
-    
+    fn get(&self) -> String {
+        format!("Complete {} UOC at level {}", self.uoc, self.level)
+    }
 }
 
 //  UoC from XXXXX 
@@ -361,12 +478,12 @@ impl UOCFromNode {
 }
 
 impl Node for UOCFromNode {
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool {
+    fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         tokens.pop();
         loop {
             let token = tokens.pop();
             if token.is_none() {
-                return false;
+                return Err(String::from("ERROR (UOC-3A): UOC from without following course code"));
             }
             match token.unwrap() {
                 Token::CODE(code) => {
@@ -374,13 +491,30 @@ impl Node for UOCFromNode {
                         Code::COURSE(course_code) => {
                             self.code.push(course_code);
                         },
-                        _ => return false,
+                        _ => return Err(String::from("ERROR (UOC-4): One of the course code is not a course code")),
                         
                     }
                 },
-                _ => (),
+                Token::OPERATOR(operator) => {
+                    match operator {
+                        Operator::OR => {
+                            continue;
+                        },
+                        _ => {
+                            println!("Warning (UOC-1): Course code is not followed by OR operator");
+                            break;
+                        }
+                    }
+                },
+                _ => return Err(String::from("ERROR (UOC-6): The expected token is a course code or OR operator")),
             }
-        }        
+        }   
+        Ok(())     
+    }
+
+    fn get(&self) -> String {
+        format!("Complete {} UOC from following course [{}]", self.uoc, self.code.iter().map(|code| code.to_string()).collect::<Vec<String>>().join(", "))
+    
     }
     
 }
@@ -397,8 +531,8 @@ impl UOCNode {
     }
 }
 impl Node for UOCNode {
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool {
-        true
+    fn get(&self) -> String {
+        format!("Complete at least {} UOC", self.uoc)
     }
     
 }
@@ -416,23 +550,29 @@ impl WamNode {
     }
 }
 impl Node for WamNode {
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool {
+    fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         let last = tokens.last();
         if last.is_none() {
-            return false;
+            return Err(String::from("ERROR (WAM-1): WAM without following course code"));
         }
         if let Token::PREPOSITION(Preposition::OF) = last.unwrap() {
             tokens.pop();
+        } else {
+            return Err(String::from("ERROR (WAM-2): WAM without following OF preposition"));
         }
         let wam = tokens.pop();
         if wam.is_none() {
-            return false;
+            return Err(String::from("ERROR (WAM-3): WAM without following WAM number"));
         }
         if let Token::NUMBER(num) = wam.unwrap() {
             self.wam = num;
         }
-        true
+        Ok(())
     
+    }
+
+    fn get(&self) -> String {
+        format!("WAM of at least {}", self.wam)
     }
 }
 
@@ -449,8 +589,8 @@ impl TextNode {
 }
 
 impl Node for TextNode {
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool {
-        true
+    fn get(&self) -> String {
+        self.text.clone()
     }
 }
 
@@ -467,10 +607,33 @@ impl CodeNode {
 }
 
 impl Node for CodeNode {
-    fn parse(&mut self, tokens: &mut Vec<Token>) -> bool {
-        true
+    fn get(&self) -> String {
+        match &self.code {
+            Code::COURSE(course_code) => {
+                format!("Course {}", course_code.to_string())
+            },
+            Code::PROGRAM(program_code) => {
+                format!("Program {}", program_code.to_string())
+            }
+        }
+    
     }
 }
+
+
+// Test
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_wam_node() {
+        
+    }
+
+    // Add more tests for other nodes and methods here
+}
+
 
 // Pre-requisites
 // Prerequisite
@@ -486,3 +649,4 @@ impl Node for CodeNode {
 // NEED TO DO
 // 34637 - end of files
 // 588 - 2325
+
