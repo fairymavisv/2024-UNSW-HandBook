@@ -94,7 +94,7 @@ impl CourseManager {
             let campus = Campus::from_str(&json_course.campus).expect(format!("Unexpected campus: {}", json_course.campus).as_str());
             // let requirements = Requirements::parse(Requirements::tokenize(&json_course.raw_requirements));
             
-            Course::new(title, code, uoc, level, study_level, offering_terms, campus, Requirements::try_new(json_course.raw_requirements))
+            Course::new(title, code, uoc, level, study_level, offering_terms, campus, Requirements::try_new(&json_course.raw_requirements))
         }).map(|course| (course.code.to_string(), course)).collect();
         course_list
     }

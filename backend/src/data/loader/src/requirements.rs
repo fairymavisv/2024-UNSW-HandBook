@@ -1,4 +1,5 @@
 use core::num;
+use std::fmt::Display;
 
 use rayon::iter;
 use wasm_bindgen::convert::OptionIntoWasmAbi;
@@ -9,6 +10,17 @@ use crate::{course::Course, utlis::{CourseCode, ProgramCode}};
 pub struct Requirements {
     contents: Option<Box<dyn Node + Send>>
 
+}
+
+impl Display for Requirements {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.contents.is_none() {
+            write!(f, "")
+        } else {
+            write!(f, "{}", self.contents.as_ref().unwrap().get())
+        }
+    }
+    
 }
 
 // #[derive(Debug)]
@@ -68,8 +80,8 @@ macro_rules! extract_prerequisite {
 }
 
 impl Requirements {
-    pub fn try_new(raw_requirements: String) -> Option<Requirements> {
-        let cleaned_requirements = Requirements::clean(raw_requirements.as_str());
+    pub fn try_new(raw_requirements: &str) -> Option<Requirements> {
+        let cleaned_requirements = Requirements::clean(raw_requirements);
         let mut tokens = Requirements::tokenize(cleaned_requirements.as_str());
         let node = Requirements::parse(&mut tokens);
         if node.is_err() {
@@ -121,7 +133,7 @@ impl Requirements {
                 "UOC" | "uoc" | "Uoc" | "UOCs" => {
                     tokens.push(Token::KEYWORD(Keyword::UOC));
                 },
-                "WAM" | "wam" => {
+                "WAM" | "wam" | "Wam" => {
                     tokens.push(Token::KEYWORD(Keyword::WAM));
                 },
                 "at" | "AT" => {
@@ -627,8 +639,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_new_wam_of_node() {
+        let requirements = Requirements::try_new("Prerequisites: WAM of 65").unwrap();
+        assert_eq!(requirements.to_string(), "WAM of at least 65");
+
+    }
+
+    #[test]
     fn test_new_wam_node() {
-        
+        let requirements = Requirements::try_new("Prerequisites: 75 WAM").unwrap();
+        assert_eq!(requirements.to_string(), "WAM of at least 75");
+
     }
 
     // Add more tests for other nodes and methods here
