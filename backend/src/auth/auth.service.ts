@@ -4,7 +4,7 @@ import * as path from 'path';
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import e from 'express';
-import { userModel } from 'src/user/user.model';
+import { UserModel } from 'src/user/user.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/user/user.model';

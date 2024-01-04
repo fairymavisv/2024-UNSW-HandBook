@@ -23,4 +23,4 @@ export const userSchema = new mongoose.Schema({
 
 //在这个 Schema 定义中，通过 { collection: 'user' } 明确指定集合名为 user。
 
-export const userModel = mongoose.model<User>('User', userSchema);
+export const UserModel = mongoose.model<User>('User', userSchema);

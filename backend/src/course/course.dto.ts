@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import exp from "constants";
 
 export class CommentDto {
 
@@ -21,34 +22,21 @@ export class CommentDto {
     public username?: string;
 }
 
-//
-// export class DeleteCommentDto {
-//     public deleteCommentId: string;
-// }
-//
+export class DeleteCommentDto {
 
-// export class CreateCommentDto {
-//     //顺序跟前端传过来的顺序一致
-//     @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })
-//     courseCode: string;
-//
-//     @ApiProperty({ example: '1234567890abcdef', description: 'The ID of the user' })
-//     userId: string;
-//
-//     @ApiProperty({ example: 'This course is great!', description: 'The text of the comment' })
-//     text: string;
-//
-//     @ApiProperty({ example: 5, description: 'The rating given by the user' })
-//     rating: number;
-//
-// }
+    @ApiProperty({ example: '1234567890abcdef', description: 'The token of the user' })
+    token: string;
+
+    @ApiProperty({ example: '6583e613abd93b909c848df3', description: 'The text of the comment' })
+    commentID: string;
+}
 
 export class CreateCommentDto {
     @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })
     courseCode: string;
 
-    @ApiProperty({ example: '1234567890abcdef', description: 'The ID of the user' })
-    userId: string;
+    @ApiProperty({ example: '1234567890abcdef', description: 'The token of the user' })
+    token: string;
 
     @ApiProperty({ example: 'This course is great!', description: 'The text of the comment' })
     text: string;

@@ -1,8 +1,7 @@
 import {Controller, Get, Post, HttpException, HttpStatus, Param, Put, Query, Body, Delete} from '@nestjs/common';
 import {CourseService } from './course.service';
 import {ApiOperation, ApiResponse} from "@nestjs/swagger";
-import {CommentDto, CourseDto, CreateCommentDto, } from "./course.dto";
-
+import {DeleteCommentDto, CourseDto, CreateCommentDto, } from "./course.dto";
 
 
 @Controller('course')
@@ -58,10 +57,10 @@ export class CourseController {
         description: 'The Course details',
         type: String,
     })
-    async deleteCourseComment(@Query("deleteCommentID") deleteCommentID: string){
+    async deleteCourseComment(@Body() deleteCommentDto: DeleteCommentDto){
         try {
 
-            const ret = await this.programService.deleteCourseComment(deleteCommentID);
+            const ret = await this.programService.deleteCourseComment(deleteCommentDto);
             if (!ret) {
                 throw new HttpException('delete comment failed', HttpStatus.NOT_FOUND);
             }

@@ -12,17 +12,16 @@ export interface BasicCourseInfo {
 
 export interface ExtendedComment {
     text: string;      // 评论文本
-    userId: string | mongoose.Schema.Types.ObjectId; // 用户ID
     updatedAt: Date;   // 最后修改时间
     difficulty: number;    // 难度评分
     usefulness: number;    // 有用程度评分
     workload: number;    // 工作量评分
-    username?: string; // 关联的用户名
+    nickname : string; // 关联的用户名
 }
 
 export interface Comment extends mongoose.Document {
     text: string;      // 评论文本
-    userId: mongoose.Schema.Types.ObjectId; // 用户ID
+    username: string; // 用户ID
     updatedAt: Date;   // 最后一次修改时间
     difficulty: number;    // 难度评分
     usefulness: number;    // 有用程度评分
@@ -43,7 +42,7 @@ export interface Course extends mongoose.Document {
 
 export const commentSchema = new mongoose.Schema({
     text: { type: String, required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    username: { type: String, ref: 'username' },
     updatedAt: { type: Date, default: Date.now }, // 保留最后一次修改的时间
     difficulty: { type: Number, required: true },
     usefulness: { type: Number, required: true },

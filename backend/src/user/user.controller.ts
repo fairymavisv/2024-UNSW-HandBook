@@ -1,4 +1,4 @@
-import {Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put} from '@nestjs/common';
+import {Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put, Query} from '@nestjs/common';
 import { UserService } from './user.service';
 import {User} from "./user.model";
 import {ApiResponse} from "@nestjs/swagger";
@@ -9,22 +9,19 @@ import {createProfileDto, UserDto} from "./user.dto";
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @Get(':username')
+    @Get()
     @ApiResponse({ status: 404, description: 'user not found' })
     @ApiResponse({
         status: 200,
         description: 'The user details',
         type: UserDto, // 指定返回的类型是 UserDto
     })
-    async getUser(@Param('username') username: string): Promise<User> {
+    async getUser(@Query('token') token: string) {
         try {
-            const user = await this.userService.getUser(username);
-            if (!user) {
-                throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-            }
+            const user = await this.userService.getUser(token);
             return user;
-        } catch (error) {
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (error) {//TODO: error message可能会泄露内部实现,是否要该为更加通用的提示
+            throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -35,9 +32,9 @@ export class UserController {
         description: 'create user profile success',
         type: String, // 返回成功信息
     })
-    async createUser(@Body() user:createProfileDto): Promise<string> {
+    async createUserProfile(@Body() user:createProfileDto): Promise<string> {
         try {
-            const ret = await this.userService.createUser(user);
+            const ret = await this.userService.createUserProfile(user);
             return ret;
         } catch (error) {
             throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
@@ -53,12 +50,12 @@ export class UserController {
         type: String,
         isArray: true // 明确指出返回的是字符串数组
     })
-    async getUserCourses(@Param('username') username: string, @Body() courseIds: string[]){
+    async getUserCourses(@Param('token') token: string, @Body() courseIds: string[]){
         try {
-            const updatedUser = await this.userService.getUserCourses(username);
+            const updatedUser = await this.userService.getUserCourses(token);
             return updatedUser;
         } catch (error) {
-            throw new HttpException('Failed to get user courses', HttpStatus.BAD_REQUEST);
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -71,12 +68,12 @@ export class UserController {
         type: String,
         isArray: true
     })
-    async addUserCourses(@Param('username') username: string, @Body() courseIds: string[]): Promise<User> {
+    async addUserCourses(@Param('token') token: string, @Body() courseIds: string[]): Promise<User> {
         try {
-            const updatedUser = await this.userService.addUserCourses(username, courseIds);
+            const updatedUser = await this.userService.addUserCourses(token, courseIds);
             return updatedUser;
         } catch (error) {
-            throw new HttpException('Failed to add courses', HttpStatus.BAD_REQUEST);
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }
     }
     // update user courses list
@@ -88,16 +85,15 @@ export class UserController {
         type: String,
         isArray: true
     })
-    async updateUserCourse(@Param('username') username: string, @Body() courseIds: string[]): Promise<User> {
+    async updateUserCourse(@Param('token') token: string, @Body() courseIds: string[]): Promise<User> {
         try {
-            const updatedUser = await this.userService.updateUserCourse(username, courseIds);
+            const updatedUser = await this.userService.updateUserCourse(token, courseIds);
             return updatedUser;
         } catch (error) {
-            throw new HttpException('Failed to update course status', HttpStatus.BAD_REQUEST);
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }
     }
 
-    //TODO:有没有必要添加删除个人课表功能
 
 
 }
