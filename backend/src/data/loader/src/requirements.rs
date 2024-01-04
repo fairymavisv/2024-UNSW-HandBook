@@ -4,9 +4,8 @@ use std::fmt::Display;
 use rayon::iter;
 use wasm_bindgen::convert::OptionIntoWasmAbi;
 
-use crate::{course::Course, utlis::{CourseCode, ProgramCode}};
+use crate::{course::{Course, CourseManager, self}, utlis::{CourseCode, ProgramCode}, program};
 
-// #[derive(Debug)]
 pub struct Requirements {
     contents: Option<Box<dyn Node + Send>>
 
@@ -22,12 +21,6 @@ impl Display for Requirements {
     }
     
 }
-
-// #[derive(Debug)]
-// pub enum RequirementContent {
-//     Binary(BinaryNode),
-//     Singel(Box<dyn Node>)
-// }
 
 #[derive(Debug)]
 pub enum Keyword {
@@ -79,6 +72,13 @@ macro_rules! extract_prerequisite {
     };
 }
 
+
+fn print_buffer(buf: &Vec<Box<dyn Node + Send>>) {
+    println!("Buffer tokens: {}", buf.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
+
+}
+
+
 impl Requirements {
     pub fn try_new(raw_requirements: &str) -> Option<Requirements> {
         let cleaned_requirements = Requirements::clean(raw_requirements);
@@ -106,9 +106,9 @@ impl Requirements {
         for line in cleaned_lines.lines() {
             let trimed = line.trim();
             extract_prerequisite!(trimed, "Pre-requisites:");
-            extract_prerequisite!(trimed, "Prerequisites:");
             extract_prerequisite!(trimed, "Pre-requisite:");
-            extract_prerequisite!(trimed, "Pre-Prerequisite:");
+            extract_prerequisite!(trimed, "Prerequisites:");
+            extract_prerequisite!(trimed, "Prerequisite:");
         }
         String::from("")
             
@@ -169,6 +169,7 @@ impl Requirements {
                             let next_str = next.unwrap();
                             if next_str.eq("[") {
                                 start = true;
+                                continue;
                             }
                             if start && next_str.eq("]") {
                                 break;
@@ -190,12 +191,21 @@ impl Requirements {
             }
         
         }
+        println!("Tokens: {:?}", tokens);
         tokens
     }
 
 
 
     fn parse(tokens: &mut Vec<Token>) -> Result<Option<Box<dyn Node + Send>>, String> {
+        // if tokens.len() == 0 {
+        //     return Ok(None);
+        // }
+        tokens.reverse();
+        Requirements::do_parse(tokens)
+    }
+
+    fn do_parse(tokens: &mut Vec<Token>) -> Result<Option<Box<dyn Node + Send>>, String> {
         // let mut tokens = Requirements::tokenize(raw_requirements);
         // let requirement = Requirements::new(String::from("raw_requirements"));
         if tokens.len() == 0 {
@@ -203,8 +213,9 @@ impl Requirements {
         }
         let mut buffer: Vec<Box<dyn Node + Send>> = Vec::new();
         let mut parsed_node: Vec<Box<dyn Node + Send>> = Vec::new();
+        // tokens.reverse();
+        
         loop {
-            tokens.reverse();
             let token = tokens.pop();
             if token.is_none() {
                 break;
@@ -219,18 +230,37 @@ impl Requirements {
                     buffer.push(Box::new(CodeNode::new(code)));
                 },
                 Token::OPERATOR(operator) => {
-                    println!("{:?}", operator);
+                    println!("line 239 tokens {:?}", operator);
                     if buffer.len() == 1 {
                         let left = buffer.pop().unwrap();
-                        let right = Requirements::parse(tokens)?;
+                        // print_buffer(tokens);
+                        let mut sub_tokens: Vec<Token>= Vec::new();
+                        loop {
+                            let token = tokens.pop();
+                            if token.as_ref().is_none() {
+                                break;
+                            } else {
+                                if let Token::COMMA = token.as_ref().unwrap() {
+                                    tokens.push(Token::COMMA);
+                                    break;
+                                } 
+                            }
+                            sub_tokens.push(token.unwrap());
+
+                        }
+                        let right = Requirements::parse(&mut sub_tokens)?;
                         if right.is_none() {
                             buffer.push(left);
                         } else {
                             let binary = BinaryNode::new(left, right.unwrap(), operator);
                             buffer.push(Box::new(binary));
                         }
+                    } else if buffer.len() == 0 {
+                        println!("Warning (BIN-1): Binary operator (e.g and, or) without left hand side");
+                        continue;
                     } else {
-                        return Err(String::from("ERROR (BIN-1): Binary operator (e.g and, or) without left hand side, or more than one left hand side token."));
+                        print_buffer(&buffer);
+                        return Err(String::from("ERROR (BIN-1): more than one left hand side token."));
                     }
                 },
                 Token::NUMBER(number) => {
@@ -251,9 +281,11 @@ impl Requirements {
                                     }
                                     match position.unwrap() {
                                         Token::PREPOSITION(preposition) => {
+                                            // tokens.pop();
                                             match preposition {
                                                 Preposition::FROM => {
                                                     let mut node = Box::new(UOCFromNode::new(number ));
+                                                    println!("line 275 Tokens: {:?}", tokens);
                                                     if node.parse(tokens)? == () {
                                                         buffer.push(node);
 
@@ -290,6 +322,8 @@ impl Requirements {
                         parsed_node.push(buffer.pop().unwrap());
 
                     } else if buffer.len() > 1 {
+                        // dbg!(buffer);
+                        print_buffer(&buffer);
                         return Err(String::from("ERROR (COM-1): There are more than one node in the buffer."));
                     }                     
                     println!(",");
@@ -298,6 +332,7 @@ impl Requirements {
                     println!("{:?}", bracket);
                     let mut num_bracket = 1;
                     let mut sub_token: Vec<Token> = Vec::new();
+                    // sub_token.push(Token::BRACKET(bracket));
                     while num_bracket != 0 {
                         let token = tokens.pop();
                         if let Some(token) = token {
@@ -315,7 +350,8 @@ impl Requirements {
                             return Err(String::from("ERROR (BRA-1): Unclose bracket."));
                         }
                     }
-
+                    sub_token.pop();
+                    println!("Sub Token{:?}", sub_token);
                     let node = Requirements::parse(&mut sub_token)?;
                     if let Some(node) = node {
                         buffer.push(node);
@@ -340,6 +376,7 @@ impl Requirements {
         if buffer.len() == 1 {
             parsed_node.push(buffer.pop().unwrap());
         } else if buffer.len() > 1 {
+            print_buffer(&buffer);
             return Err(String::from("ERROR (COM-1): There are more than one node in the buffer."));
         }
 
@@ -359,6 +396,7 @@ pub trait Node {
     }
 
     fn get(&self) -> String;
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String>;
 
 }
 
@@ -386,7 +424,11 @@ impl ListNode {
 
 impl Node for ListNode {
     fn get(&self) -> String {
-        format!("Require all of following requirement: {}", self.nodes.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
+        format!("Require all of following conditions: {}", self.nodes.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
+    }
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        Ok(self.nodes.iter().all(|node| node.evulate(program_code, taken_course, wam, course_manager).unwrap_or(false)))
+            
     }
 }
 
@@ -421,6 +463,33 @@ impl Node for BinaryNode {
             Operator::OR => "or",
         }, self.right.get())
     
+    }
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        match self.operator {
+            Operator::AND => {
+                let left = self.left.evulate(program_code, taken_course, wam, course_manager)?;
+                if left == false {
+                    return Ok(false)
+                }
+                let right = self.right.evulate(program_code, taken_course, wam, course_manager)?;
+                if right == false {
+                    return Ok(false)
+                }
+                return Ok(true)
+            },
+            Operator::OR => {
+                let left = self.left.evulate(program_code, taken_course, wam, course_manager)?;
+                if left == true {
+                    return Ok(true)
+                }
+                let right = self.right.evulate(program_code, taken_course, wam, course_manager)?;
+                if right == true {
+                    return Ok(true)
+                }
+                return Ok(false)
+
+            }
+        }
     }
 }
 
@@ -473,6 +542,25 @@ impl Node for UOCAtLevelNode {
     fn get(&self) -> String {
         format!("Complete {} UOC at level {}", self.uoc, self.level)
     }
+
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        let mut sum = 0;
+        for course in taken_course {
+            let course_code = CourseCode::from_str(&course);
+            if course_code.as_ref().is_none() {
+                return Err(String::from(format!("Given {} is not a Course Code", course)));
+            }
+            if course_code.as_ref().unwrap().level() == self.level {
+                sum += course_manager.get_course(&course_code.unwrap())?.uoc()
+            }
+        }
+        if sum >= self.uoc {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+        // .map(|course| course.)
+    }
 }
 
 //  UoC from XXXXX 
@@ -492,10 +580,11 @@ impl UOCFromNode {
 impl Node for UOCFromNode {
     fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         tokens.pop();
+        println!("line 520 Tokens: {:?}", tokens);
         loop {
             let token = tokens.pop();
             if token.is_none() {
-                return Err(String::from("ERROR (UOC-3A): UOC from without following course code"));
+                break;
             }
             match token.unwrap() {
                 Token::CODE(code) => {
@@ -521,12 +610,34 @@ impl Node for UOCFromNode {
                 _ => return Err(String::from("ERROR (UOC-6): The expected token is a course code or OR operator")),
             }
         }   
+        if self.code.len() == 0 {
+            return Err(String::from("ERROR (UOC-3A): UOC from without following course code"));
+        }
         Ok(())     
     }
 
     fn get(&self) -> String {
         format!("Complete {} UOC from following course [{}]", self.uoc, self.code.iter().map(|code| code.to_string()).collect::<Vec<String>>().join(", "))
     
+    }
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        let mut sum = 0;
+        for course in taken_course {
+            let course_code = CourseCode::from_str(&course);
+            if course_code.as_ref().is_none() {
+                return Err(String::from(format!("Given {} is not a Course Code", course)));
+            }
+            if self.code.contains(&course_code.as_ref().unwrap()) {
+                sum += course_manager.get_course(&course_code.unwrap())?.uoc()
+            } 
+
+            
+        }
+        if sum >= self.uoc {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
     
 }
@@ -546,7 +657,23 @@ impl Node for UOCNode {
     fn get(&self) -> String {
         format!("Complete at least {} UOC", self.uoc)
     }
-    
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        let mut sum = 0;
+        for course in taken_course {
+            let course_code = CourseCode::from_str(&course);
+            if course_code.is_none() {
+                return Err(String::from(format!("Given {} is not a Course Code", course)));
+            }
+            sum += course_manager.get_course(&course_code.unwrap())?.uoc()
+
+            
+        }
+        if sum >= self.uoc {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
 }
 
 // WAM of 
@@ -586,6 +713,14 @@ impl Node for WamNode {
     fn get(&self) -> String {
         format!("WAM of at least {}", self.wam)
     }
+
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        if wam.is_none() {
+            Ok(true)
+        } else {
+            Ok(wam.unwrap() >= self.wam)
+        }
+    }
 }
 
 pub struct TextNode {
@@ -603,6 +738,9 @@ impl TextNode {
 impl Node for TextNode {
     fn get(&self) -> String {
         self.text.clone()
+    }
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        Ok(true)
     }
 }
 
@@ -622,13 +760,23 @@ impl Node for CodeNode {
     fn get(&self) -> String {
         match &self.code {
             Code::COURSE(course_code) => {
-                format!("Course {}", course_code.to_string())
+                format!("{}", course_code.to_string())
             },
             Code::PROGRAM(program_code) => {
-                format!("Program {}", program_code.to_string())
+                format!("{}", program_code.to_string())
             }
         }
     
+    }
+    fn evulate(&self, program_code: &str, taken_course: &Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        match &self.code {
+            Code::COURSE(course) => {
+                Ok(taken_course.contains(&course.to_string()))
+            },
+            Code::PROGRAM(program) => {
+                Ok(program_code.to_string().eq(&program.to_string()))
+            }
+        }
     }
 }
 
@@ -652,7 +800,156 @@ mod tests {
 
     }
 
-    // Add more tests for other nodes and methods here
+
+    #[test]
+    fn test_coursecode_node() {
+        let requirements = Requirements::try_new("Prerequisites: COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "COMP1511");
+
+    }
+    #[test]
+    fn test_programcode_node() {
+        let requirements = Requirements::try_new("Prerequisites: must enroll in master of commerce - Finance 9999").unwrap();
+        assert_eq!(requirements.to_string(), "9999");
+
+    }
+
+    #[test]
+    fn test_text_node() {
+        let requirements = Requirements::try_new("Prerequisites: TEXT [ major in FINSXXXX]").unwrap();
+        assert_eq!(requirements.to_string(), "major in FINSXXXX")
+    }
+
+    #[test]
+    fn text_uoc_at() {
+        let requirements = Requirements::try_new("Prerequisites: 36 UOC at level 1").unwrap();
+        assert_eq!(requirements.to_string(), "Complete 36 UOC at level 1")
+    }
+
+    #[test]
+    fn test_uoc_from() {
+        let requirements = Requirements::try_new("Prerequisites: 6 UOC from following course COMM1100 or COMM1120 or COMM1140").unwrap();
+        assert_eq!(requirements.to_string(), "Complete 6 UOC from following course [COMM1100, COMM1120, COMM1140]")
+        
+    }
+
+    #[test]
+    fn test_uoc_overall() {
+        let requirements = Requirements::try_new("Prerequisites: finish 112 UOC overall").unwrap();
+        assert_eq!(requirements.to_string(), "Complete at least 112 UOC")
+
+    }
+
+    #[test]
+    fn test_basic_binary() {
+        let requirements = Requirements::try_new("Prerequisites: COMP1511 and COMP1521").unwrap();
+        assert_eq!(requirements.to_string(), "(COMP1511 and COMP1521)")
+    }
+
+    #[test]
+    fn test_basic_list() {
+        let requirements = Requirements::try_new("Prerequisites: COMP1511, COMP1521").unwrap();
+        assert_eq!(requirements.to_string(), "Require all of following conditions: COMP1511, COMP1521")
+    }
+
+    #[test]
+    fn test_long_binary() {
+        let requirements = Requirements::try_new("Prerequisites: COMP1511 and COMP1521 OR COMP1531 OR COMP2521 And COMM1999").unwrap();
+        assert_eq!(requirements.to_string(), "(COMP1511 and (COMP1521 or (COMP1531 or (COMP2521 and COMM1999))))")
+
+    }
+    #[test]
+    fn test_edge_list() {
+        let requirements = Requirements::try_new("Prerequisites: COMP1511, and COMM1100").unwrap();
+        assert_eq!(requirements.to_string(), "Require all of following conditions: COMP1511, COMM1100")
+    }
+
+    #[test]
+    fn test_nest_node() {
+        let requirements = Requirements::try_new("Prerequisites: (COMP1511 and COMP1521) or (COMP3311 and COMM1999)").unwrap();
+        assert_eq!(requirements.to_string(), "((COMP1511 and COMP1521) or (COMP3311 and COMM1999))")
+        
+    }
+
+    #[test]
+    fn test_program_and_course() {
+        let requirements = Requirements::try_new("Prerequisites: Must enroll in master of commerce 3784 and complete COMM1110").unwrap();
+        assert_eq!(requirements.to_string(), "(3784 and COMM1110)");
+        let requirements = Requirements::try_new("Prerequisites: Must enroll in master of commerce 3784, complete COMM1110").unwrap();
+        assert_eq!(requirements.to_string(), "Require all of following conditions: 3784, COMM1110");
+    }
+
+    #[test]
+    fn test_code_and_uoc() {
+        let requirements = Requirements::try_new("Prerequisites: Must enroll in master of commerce 3784 and complete 12 uoc from COMM1100 or COMM1120 or COMM1140").unwrap();
+        assert_eq!(requirements.to_string(), "(3784 and Complete 12 UOC from following course [COMM1100, COMM1120, COMM1140])")
+    }
+
+    #[test]
+    fn test_code_and_wam() {
+        let requirements = Requirements::try_new("Prerequisites: Must enroll in master of commerce 3784 and wam of 65 or above").unwrap();
+        assert_eq!(requirements.to_string(), "(3784 and WAM of at least 65)")
+    }
+
+    #[test]
+    fn test_wam_and_uoc() {
+        let requirements = Requirements::try_new("Prerequisites: WAM of 85 and complete 102 uoc at level 1").unwrap();
+        assert_eq!(requirements.to_string(), "(WAM of at least 85 and Complete 102 UOC at level 1)")
+
+    }
+
+    #[test]
+    fn test_empty_str() {
+        let requirements = Requirements::try_new("").unwrap();
+        assert_eq!(requirements.to_string(), "")
+    }
+
+    #[test]
+    fn test_unused_str() {
+        let requirements = Requirements::try_new("Exclusion: MECH3211, MTRN3212").unwrap();
+        assert_eq!(requirements.to_string(), "")
+    }
+
+    #[test]
+    fn test_br() {
+        let requirements = Requirements::try_new("Exclusion: MECH3211, MTRN3212<br/>Prerequisites: MATH1231 OR DPST1014 OR MATH1241").unwrap();
+        assert_eq!(requirements.to_string(), "(MATH1231 or (DPST1014 or MATH1241))")
+    }
+
+    #[test]
+    fn test_prefix() {
+        let requirements = Requirements::try_new("Pre-requisites: COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "COMP1511");
+        let requirements = Requirements::try_new("Prerequisite: COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "COMP1511");
+        let requirements = Requirements::try_new("Pre-requisite: COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "COMP1511");
+        let requirements = Requirements::try_new("Prerequisites: COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "COMP1511");
+        let requirements = Requirements::try_new("Co-requisite: COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "");
+        let requirements = Requirements::try_new("COMP1511").unwrap();
+        assert_eq!(requirements.to_string(), "");
+
+    }
+
+    #[test]
+    fn test_text_nested() {
+        let requirements = Requirements::try_new("Pre-requisites: (TEXT [Major in COMMMA and something like (this)] and COMM1140) or (TEXT [ Major in COMMMB] and COMM1120)").unwrap();
+        assert_eq!(requirements.to_string(), "((Major in COMMMA and something like ( this ) and COMM1140) or (Major in COMMMB and COMM1120))");
+    }
+
+    #[test]
+    fn test_complex() {
+        let requirements = Requirements::try_new("Pre-requisites: (TEXT [ this is a text] and COMM1140 or COMM1190) or (wam of 85 and (complete at least 102 uoc at level 3 or program 3999)), COMM1110").unwrap();
+        assert_eq!(requirements.to_string(), "Require all of following conditions: ((this is a text and (COMM1140 or COMM1190)) or (WAM of at least 85 and (Complete 102 UOC at level 3 or 3999))), COMM1110");
+    }
+
+    // #[test]
+    // fn test_eval() {
+    //     let requirements = Requirements::try_new("Pre-requisites: (TEXT [ this is a text] and COMM1140 or COMM1190) or (wam of 85 and (complete at least 102 uoc at level 3 or program 3999)), COMM1110").unwrap();
+    // }
+
 }
 
 

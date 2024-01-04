@@ -147,6 +147,11 @@ impl CourseManager {
         }).collect::<HashMap<String, Vec<ExclusionCondition>>>()
     }
 
+    pub fn get_course(&self, course_code: &CourseCode) -> Result<Course, String> {
+
+        todo!()
+    }
+
     
 
 

@@ -1,13 +1,20 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Debug};
 
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct ProgramCode {
     code: [char; 4],
 }
 impl Display for ProgramCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.code.iter().collect::<String>())
+    }
+}
+
+impl Debug for ProgramCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.code.iter().collect::<String>())
+        
     }
 }
 
@@ -37,7 +44,6 @@ impl ProgramCode {
     }
 }
 
-#[derive(Debug)]
 pub struct CourseCode {
     school_code: [char; 4],
     course_code: [char; 4],
@@ -48,6 +54,13 @@ impl Display for CourseCode {
         write!(f, "{}{}", self.school_code.iter().collect::<String>(), self.course_code.iter().collect::<String>())
     }
     
+}
+
+impl Debug for CourseCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.school_code.iter().collect::<String>(), self.course_code.iter().collect::<String>())
+        
+    }
 }
 
 impl CourseCode {
@@ -85,7 +98,15 @@ impl CourseCode {
     pub fn course_code(&self) -> &[char; 4] {
         &self.course_code
     }
-    
+    pub fn level(&self) -> u8 {
+        self.course_code[0].to_digit(10).unwrap() as u8
+    }    
+}
+
+impl PartialEq for CourseCode {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_string().eq(&other.to_string())
+    }
 }
 
 pub enum OfferingTerm{
