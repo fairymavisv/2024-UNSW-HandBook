@@ -160,8 +160,6 @@ export default {
                     this.waitVerify = true;
                 }
             });
-
-            // this.waitVerify = true;
         },
 
         enter() {
