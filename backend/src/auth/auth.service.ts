@@ -1,7 +1,7 @@
 // auth.service.ts
 import * as fs from 'fs';
 import * as path from 'path';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import e from 'express';
 import { userModel } from 'src/user/user.model';
@@ -9,7 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/user/user.model';
 import { JwtAuthService } from 'src/jwt.service';
-import { authResponse, loginResponse, registerResponse } from './auth.dto';
+import { vertificationResponse, loginResponse, registerResponse, submitNicknameResponse, nickNameBodyDto } from './auth.dto';
 
 
 @Injectable()
@@ -26,13 +26,9 @@ export class AuthService {
   });
   */
 
-  async register(user: { username: string; password: string; confirmPassword: string }): Promise<registerResponse> {
-    const { username, password, confirmPassword } = user;
+  async register(user: { username: string; password: string; vertificationCode: string }): Promise<registerResponse> {
+    const { username, password, vertificationCode } = user;
 
-    // 检查密码和确认密码是否匹配
-    if (password !== confirmPassword) {
-      return new registerResponse(404, 'Password and confirm password do not match');
-    }
     // 检查email必须为z + 7位数字 + @ad.unsw.edu.au格式
     const emailRegex = /^z\d{7}@ad\.unsw\.edu\.au$/;
     if (!emailRegex.test(username)) {
@@ -51,21 +47,35 @@ export class AuthService {
       return new registerResponse(404, 'User already exists');
     }
 
-    // 将用户添加到MongoDB数据库中
-    //const newUser = new this.userModel({ username, password });
-    //await newUser.save();
+    // 检查验证码是否正确
+    if (vertificationCode !== '123456') {
+      return new registerResponse(404, 'Verification code is incorrect');
+    }
 
-    
-    const userData: { username: string; password: string } = { username, password };
-    const result = new registerResponse(200, 'Register successful');
-    result.userData = userData;
+    //将用户添加到MongoDB数据库中
+    const newUser = new this.userModel({ username, password });
+    //给用户一个随机昵称按照格式user+7位随机数字,检查是否重复
+    newUser.nickname = 'user' + Math.floor(Math.random() * 10000000);
+    const existingNickname = await this.userModel.findOne({ nickname: newUser.nickname });
+    if (existingNickname) {
+      newUser.nickname = 'user' + Math.floor(Math.random() * 10000000);
+    }
+
+    await newUser.save();
+
 
     // 生成token
-    //const token = await this.jwtService.generateToken(username);
-    return result;
+    const accessToken = await this.jwtService.generateAccessToken(username);
+    const refreshToken = await this.jwtService.generateRefreshToken(username);
+
+    newUser.refreshToken = refreshToken;
+    await newUser.save();
+
+    // 返回注册成功的信息
+    return new registerResponse(200, 'Register successful', accessToken, refreshToken);
   }
 
-  async sendVerificationCode(user: { email: string }): Promise<any> {
+  async sendVerificationCode(user: { username: string }): Promise<any> {
     // 像用户发送验证码
     /*
     const mailOptions = {
@@ -86,27 +96,27 @@ export class AuthService {
       });
     });
     */
-    return new authResponse(200, 'Verification code sent');
+    return new vertificationResponse(200, 'Verification code sent');
 
   }
 
-  async submitNickname(user: {userData: { username: string; password: string }; vertificationCode: string; nickName: string}): Promise<loginResponse> {
-    const {userData, vertificationCode, nickName } = user;
+  async submitNickname(nickName: nickNameBodyDto, accessToken: string): Promise<submitNicknameResponse> {
 
-    // 检查验证码是否正确
-    if (vertificationCode !== '123456') {
-      return new loginResponse(404, 'Verification code is incorrect');
+    // 解析token
+    const username = await this.jwtService.verifyToken(accessToken, 'access')
+
+    // 检查用户是否存在于MongoDB数据库中
+    const existingUser = await this.userModel.findOne({ username: username });
+    if (!existingUser) {
+      return new submitNicknameResponse(404, 'User does not exist');
     }
 
-    // 将用户添加到MongoDB数据库中
-    const newUser = new this.userModel({ username: userData.username, password: userData.password, nickname: nickName });
-    await newUser.save();
-
-    //创建token
-    const token = await this.jwtService.generateToken(userData.username);
+    // 更改此用户昵称
+    existingUser.nickname = nickName.nickName;
+    await existingUser.save();
 
     // 返回提交昵称成功的信息
-    return new loginResponse(200, 'Submit nickname successful', token);
+    return new submitNicknameResponse(200, 'Submit nickname successful');
   }
 
 
@@ -121,9 +131,35 @@ export class AuthService {
     if (password !== existingUser.password) {
       return new loginResponse(404, 'Password is incorrect');
     }
-    // console.log(existingUser)
-    const token = await this.jwtService.generateToken(username);
+    
+    const accessToken = await this.jwtService.generateAccessToken(username);
+    const refreshToken = await this.jwtService.generateRefreshToken(username);
 
-    return new loginResponse(200, 'Login successful', token);
+    existingUser.refreshToken = refreshToken;
+    await existingUser.save();
+
+    return new loginResponse(200, 'Login successful', accessToken, refreshToken);
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<any> {
+    //判断当前refreshToken是否于数据库中的refreshToken一致
+    const existingUser = await this.userModel.findOne({ refreshToken: refreshToken });
+    if (!existingUser) {
+      return new UnauthorizedException('Invalid token');
+    }
+
+    //verify看该refreshToken是否过期
+    const username = await this.jwtService.verifyToken(refreshToken, 'refresh');
+
+    // 生成新的token
+    const accessToken = await this.jwtService.generateAccessToken(username);
+    const newRefreshToken = await this.jwtService.generateRefreshToken(username);
+
+    // 更新用户的refreshToken
+    existingUser.refreshToken = newRefreshToken;
+    await existingUser.save();
+
+    // 返回新的token
+    return new loginResponse(200, 'Refresh access token successful', accessToken, newRefreshToken);
   }
 }

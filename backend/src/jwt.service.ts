@@ -1,38 +1,53 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AppModule } from './app.module';
 import * as crypto from 'crypto';
 import { get } from 'http';
 
 @Injectable()
 export class JwtAuthService {
-  private secret: string;
 
   constructor(private readonly jwtService: JwtService) {
-    this.secret = generateRandomKey();
+  }
+  /*
+  private generateRandomKey() {
+    const result = crypto.randomBytes(32).toString('hex');
+    return result;
+  }
+  */
+  private secret = 'unsw-handbookx';
+
+  public generateAccessToken(username: string) {
+    return this.jwtService.sign({ username }, {secret: this.secret, expiresIn: '15m'});
   }
 
-  async generateToken(payload: any): Promise<string> {
-    console.log('secret: ', this.secret);
-    console.log('payload: ', payload);
-    return this.jwtService.sign(payload, { secret: this.secret });
+  public generateRefreshToken(username: string) {
+    return this.jwtService.sign({ username }, {secret: this.secret, expiresIn: '7d'});
   }
 
-  async verifyToken(token: string): Promise<any> {
+  public verifyToken(token: string, tokenType: string) {
     try {
-      return this.jwtService.verify(token, { secret: this.secret });
+      console.log(token);
+      console.log(this.secret);
+      const decoded = this.jwtService.verify(token, {secret: this.secret});
+      console.log(decoded);
+      //将decoded中的exp和iat转换为Date类型
+      decoded.exp = new Date(decoded.exp * 1000);
+      decoded.iat = new Date(decoded.iat * 1000);
+      console.log(decoded.exp);
+      console.log(decoded.iat);
+      return decoded.username;
     } catch (error) {
-      return null;
+      if (error.name === 'TokenExpiredError') {
+        if (tokenType === 'access') {
+          throw new UnauthorizedException('Access token expired');
+        } else if (tokenType === 'refresh') {
+          throw new UnauthorizedException('Refresh token expired');
+        }
+      } else {
+        throw new UnauthorizedException('Invalid token');
+      }
     }
   }
 }
-
-function generateRandomKey() {
-  const result = crypto.randomBytes(32).toString('hex');
-  // 如果result为undefined，那么就报错，不然就打印出来
-  if (result === undefined) {
-    throw new Error('generate random key error');
-  }
-  console.log('random key: ', result);
-  return result;
-}
-
+   

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import { CourseInterface } from './course.interface';
 import {InjectModel} from "@nestjs/mongoose";
 import mongoose, {Model} from "mongoose";
 import {Course, CourseInfo,Comment} from "./course.model";
+import {CreateCommentDto} from "./course.dto";
 
 
 
@@ -35,8 +36,10 @@ export class CourseService {
                         text: comment.text,
                         userId: comment.userId,
                         updatedAt: comment.updatedAt,
-                        rating: comment.rating,
-                        username: (comment.userId as any).username // 使用类型断言
+                        username: (comment.userId as any).username, // 使用类型断言
+                        difficulty: comment.difficulty,
+                        usefulness: comment.usefulness,
+                        workload: comment.workload
                     };
                 }) : [] // 如果 courseFromMongo 为空，则返回空数组
             };
@@ -46,37 +49,81 @@ export class CourseService {
         }
     }
 
-    async createCourseComment(CourseCode: string, userId: string, text: string, rating: number) {
+    // async createCourseComment(CourseCode: string, userId: string, text: string, rating: number) {
+    //
+    //     const course = await CourseInterface.getCourseInfo(CourseCode);
+    //     if (!course) {
+    //         throw new Error('Course not found');
+    //     }
+    //     let courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
+    //     console.log("courseFromMongo", courseFromMongo);
+    //
+    //     if(!courseFromMongo) {
+    //         const newCourse = new this.courseModel({
+    //             courseCode: CourseCode,
+    //             comments: []
+    //         });
+    //         await newCourse.save();
+    //
+    //     }
+    //     courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
+    //     console.log("courseFromMongo after create", courseFromMongo);
+    //
+    //     // 确保这里使用的是针对评论的模型
+    //     const newComment = new this.commentModel({
+    //         text: text,
+    //         userId: userId, // 如果 userId 已经是字符串形式的 ObjectId，则无需转换
+    //         updatedAt: new Date(),
+    //         rating: rating
+    //     });
+    //     console.log("newComment", newComment);
+    //     courseFromMongo.comments.push(newComment);
+    //     await courseFromMongo.save();
+    //     console.log("courseFromMongo after save", courseFromMongo);
+    //     return newComment;
+    // }
 
-        const course = await CourseInterface.getCourseInfo(CourseCode);
+    async createCourseComment(createCommentDto: CreateCommentDto) {
+        const { courseCode, userId, text, difficulty, usefulness, workload } = createCommentDto;
+        const upperCaseCode = courseCode.toUpperCase();
+
+        const course = await CourseInterface.getCourseInfo(upperCaseCode);
         if (!course) {
             throw new Error('Course not found');
         }
-        let courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
+        let courseFromMongo = await this.courseModel.findOne({ courseCode: upperCaseCode });
         console.log("courseFromMongo", courseFromMongo);
 
         if(!courseFromMongo) {
             const newCourse = new this.courseModel({
-                courseCode: CourseCode,
+                courseCode: upperCaseCode,
                 comments: []
             });
             await newCourse.save();
 
         }
-        courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
+        courseFromMongo = await this.courseModel.findOne({ courseCode: upperCaseCode });
         console.log("courseFromMongo after create", courseFromMongo);
-
-        // 确保这里使用的是针对评论的模型
+        // 验证必需字段
+        if (difficulty === undefined || usefulness === undefined || workload === undefined) {
+            throw new Error('缺少必要的评分维度');
+        }
+        // Create a new comment
         const newComment = new this.commentModel({
             text: text,
-            userId: userId, // 如果 userId 已经是字符串形式的 ObjectId，则无需转换
+            userId: userId, // Assuming userId is already a string ObjectId
             updatedAt: new Date(),
-            rating: rating
+            difficulty: difficulty,
+            usefulness: usefulness,
+            workload: workload
         });
-        console.log("newComment", newComment);
+
+        // Add comment to the course
         courseFromMongo.comments.push(newComment);
+
+        // Save the updated course
         await courseFromMongo.save();
-        console.log("courseFromMongo after save", courseFromMongo);
+
         return newComment;
     }
 
