@@ -1,6 +1,6 @@
 // auth.controller.ts
 
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { loginBodyDto, loginResponse, nickNameBodyDto, registerBodyDto, registerResponse, sendVerificationCodeDto, submitNicknameResponse, vertificationResponse } from './auth.dto';
 import { ApiResponse } from '@nestjs/swagger';
@@ -39,8 +39,8 @@ export class AuthController {
       description: 'submit nickname success',
       type: submitNicknameResponse
   })
-  async submitNickname(@Body() body: nickNameBodyDto): Promise<any> {
-    return this.authService.submitNickname(body);
+  async submitNickname(@Body() body: nickNameBodyDto, @Headers('accessToken') accessToken: string): Promise<any> {
+    return this.authService.submitNickname(body, accessToken);
   }
 
   @Post('login')
@@ -52,5 +52,16 @@ export class AuthController {
   })
   async login(@Body() body: loginBodyDto): Promise<any> {
     return this.authService.login(body);
+  }
+
+  @Post('refreshToken')
+  @ApiResponse({ status: 404, description: 'user not found' })
+  @ApiResponse({
+      status: 200,
+      description: 'refresh token success',
+      type: loginResponse
+  })
+  async refreshToken(@Headers('refreshToken') refreshToken: string): Promise<any> {
+    return this.authService.refreshAccessToken(refreshToken);
   }
 }

@@ -20,12 +20,16 @@ export class registerResponse {
     message: string;
 
     @ApiProperty()
-    token?: string;
+    accessToken?: string;
 
-    constructor(statusCode: number, message: string, token?: string) {
-        this.statusCode = statusCode;
-        this.message = message;
-        this.token = token;
+    @ApiProperty()
+    refreshToken?: string;
+
+    constructor(statusCode: number, message: string, accessToken?: string, refreshToken?: string) {
+      this.statusCode = statusCode;
+      this.message = message;
+      this.accessToken = accessToken;
+      this.refreshToken = refreshToken;
     }
 
 }
@@ -36,9 +40,6 @@ export class sendVerificationCodeDto {
 }
 
 export class nickNameBodyDto {
-
-    @ApiProperty({description: 'The token of the user'})
-    token: string;
 
     @ApiProperty({ example: 'Glenn', description: 'The nickname of the user' })
     nickName: string;
@@ -73,12 +74,16 @@ export class loginResponse {
     message: string;
   
     @ApiProperty()
-    token?: string;
+    accessToken?: string;
+
+    @ApiProperty()
+    refreshToken?: string;
   
-    constructor(statusCode: number, message: string, token?: string) {
+    constructor(statusCode: number, message: string, accessToken?: string, refreshToken?: string) {
       this.statusCode = statusCode;
       this.message = message;
-      this.token = token;
+      this.accessToken = accessToken;
+      this.refreshToken = refreshToken;
     }
 }
 

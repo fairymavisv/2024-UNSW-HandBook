@@ -6,21 +6,24 @@ import { MongooseModule } from '@nestjs/mongoose';
 import {UserModule} from "./user/user.module";
 import {CourseModule} from "./course/course.module";
 import { AuthModule } from './auth/auth.module';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import {ConfigModule} from "@nestjs/config";
 
 @Module({
   imports: [ProgramModule,UserModule, AuthModule, CourseModule, JwtModule.register(
       {
-        secret: 'secret',
-        signOptions: { expiresIn: '1d' },
+        global: true,
+        secret: 'unsw-handbookx',
+        signOptions: { expiresIn: '15m' },
       }),
       ConfigModule.forRoot({
-        isGlobal: true,
+          isGlobal: true,
       }),
       MongooseModule.forRoot(process.env.MONGO_URI),],
+
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtService],
 })
+
 export class AppModule {}
 
