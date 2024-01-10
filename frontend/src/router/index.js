@@ -6,6 +6,7 @@ const routes = [
   { path: "/login", component: AuthPage},
   { path: "/register", component: AuthPage},
 
+
   {
     path: '/courseList',
     name: 'courseList',
