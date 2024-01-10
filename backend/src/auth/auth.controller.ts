@@ -39,7 +39,8 @@ export class AuthController {
       description: 'submit nickname success',
       type: submitNicknameResponse
   })
-  async submitNickname(@Body() body: nickNameBodyDto, @Headers('accessToken') accessToken: string): Promise<any> {
+  async submitNickname(@Body() body: nickNameBodyDto, @Headers('authorization') accessToken: string): Promise<any> {
+    accessToken = accessToken.replace('Bearer ', '');
     return this.authService.submitNickname(body, accessToken);
   }
 
@@ -61,7 +62,8 @@ export class AuthController {
       description: 'refresh token success',
       type: loginResponse
   })
-  async refreshToken(@Headers('refreshToken') refreshToken: string): Promise<any> {
+  async refreshToken(@Headers('authorization') refreshToken: string): Promise<any> {
+    refreshToken = refreshToken.replace('Bearer ', '');
     return this.authService.refreshAccessToken(refreshToken);
   }
 }
