@@ -122,14 +122,14 @@ export default {
         },
 
         auth() {
-            this.$fetchReq("auth/" + this.isRegister ? 'register' : 'login', "POST", {
+            this.$fetchReq("auth/" + (this.isRegister ? 'register' : 'login'), "POST", {
                 username: this.email,
                 password: this.password,
-                code: this.code
+                vertificationCode: this.code
             }).then((data) => {
-                if (data.error) {
+                if (data.statusCode !== 200) {
                     this.$message({
-                        message: data.error,
+                        message: data.message,
                         type: "error",
                     });
                 } else {
@@ -138,22 +138,23 @@ export default {
                         type: "success",
                     });
 
-                    localStorage.setItem("token", data.token);
+                    localStorage.setItem("accessToken", data.accessToken);
+                    localStorage.setItem("refreshToken", data.refreshToken);
                     this.$router.push("/courseList");
                 }
             });
         },
 
         verify() {
-            this.$fetchReq("auth/submitVertification", "POST", { username: this.email }).then((data) => {
-                if (data.error) {
+            this.$fetchReq("auth/send-verification-code", "POST", { username: this.email }).then((data) => {
+                if (data.statusCode !== 200) {
                     this.$message({
-                        message: data.error,
+                        message: data.message,
                         type: "error",
                     });
                 } else {
                     this.$message({
-                        message: "Vertification code sent, please check your email",
+                        message: "Verification code sent, please check your email",
                         type: "success",
                     });
 
