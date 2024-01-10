@@ -9,7 +9,7 @@ export default function (app) {
             method,
             headers: {
                 'Content-Type': 'application/json',
-                [key]: token
+                Authorization: 'Bearer ' + token
             },
             body: body ? JSON.stringify(body) : null
         })
