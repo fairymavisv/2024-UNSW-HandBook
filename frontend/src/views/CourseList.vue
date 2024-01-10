@@ -1,5 +1,5 @@
 <template>
-    <button @click="testToken">test token</button>
+    <!-- <button @click="testToken">test token</button> -->
     <div class="common-layout">
         <el-container>
             <el-header style="background-color: rgb(174, 174, 237)">Header</el-header>
@@ -53,28 +53,28 @@ const courseList = ref([]);
 // 	courseList.value = data
 // })
 
-// $fetchReq("programs/3778/Computer Science", "GET").then((data) => {
-//     data = data.CompulsoryCourseList //
-//     data.forEach((course) => {
-//         const terms = Math.ceil(Math.random() * 3);
-//         course.term = [];
-//         for (let i = 1; i <= terms; i++) {
-//             course.term.push(i);
-//         }
+$fetchReq("programs/3778/Computer Science", "GET").then((data) => {
+    data = data.CompulsoryCourseList //
+    data.forEach((course) => {
+        const terms = Math.ceil(Math.random() * 3);
+        course.term = [];
+        for (let i = 1; i <= terms; i++) {
+            course.term.push(i);
+        }
 
-//         course.uoc = Math.ceil(Math.random() * 6);
-//     });
-
-//     courseList.value = data;
-// });
-
-function testToken() {
-    $fetchReq("auth/submitNickname", "POST", {
-        nickname: "test",
-    }).then((data) => {
-        console.log(data);
+        course.uoc = Math.ceil(Math.random() * 6);
     });
-}
+
+    courseList.value = data;
+});
+
+// function testToken() {
+//     $fetchReq("auth/submitNickname", "POST", {
+//         nickname: "test",
+//     }).then((data) => {
+//         console.log(data);
+//     });
+// }
 </script>
 
 <style scoped>
