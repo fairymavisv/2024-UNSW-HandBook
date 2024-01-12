@@ -1,7 +1,8 @@
 import {Controller, Get, Post, HttpException, HttpStatus, Param, Put, Query, Body, Delete} from '@nestjs/common';
 import {CourseService } from './course.service';
 import {ApiOperation, ApiResponse} from "@nestjs/swagger";
-import {CommentDto, CourseDto, CreateCommentDto, } from "./course.dto";
+import {DeleteCommentDto,CourseInfoDto, CreateCommentReturnDto,CreateCommentDto} from "./course.dto";
+
 
 
 
@@ -16,7 +17,7 @@ export class CourseController {
     @ApiResponse({
         status: 200,
         description: 'The Course details',
-        type: CourseDto,
+        type: CourseInfoDto,
     })
     async getCourseInfo(@Param('CourseCode') CourseCode: string) {
         try {
@@ -38,7 +39,7 @@ export class CourseController {
     @ApiResponse({
         status: 200,
         description: 'The Course details',
-        type: CreateCommentDto, // 指定返回的类型是 UserDto
+        type: CreateCommentReturnDto, // 指定返回的类型是 UserDto
     })
     async createCourseComment(@Body() createCommentDto: CreateCommentDto) {
         try {
@@ -58,10 +59,10 @@ export class CourseController {
         description: 'The Course details',
         type: String,
     })
-    async deleteCourseComment(@Query("deleteCommentID") deleteCommentID: string){
+    async deleteCourseComment(@Body() deleteCommentDto: DeleteCommentDto){
         try {
 
-            const ret = await this.programService.deleteCourseComment(deleteCommentID);
+            const ret = await this.programService.deleteCourseComment(deleteCommentDto);
             if (!ret) {
                 throw new HttpException('delete comment failed', HttpStatus.NOT_FOUND);
             }

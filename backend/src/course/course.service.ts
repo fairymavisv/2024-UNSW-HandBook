@@ -1,9 +1,11 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import { CourseInterface } from './course.interface';
 import {InjectModel} from "@nestjs/mongoose";
 import mongoose, {Model} from "mongoose";
 import {Course, CourseInfo,Comment} from "./course.model";
-import {CreateCommentDto} from "./course.dto";
+import {CreateCommentDto, DeleteCommentDto} from "./course.dto";
+import {User} from "../user/user.model";
+import {JwtAuthService} from "../jwt.service";
 
 
 
@@ -11,37 +13,38 @@ import {CreateCommentDto} from "./course.dto";
 export class CourseService {
     constructor(
         @InjectModel('Course') private courseModel: Model<Course>,
-        @InjectModel('Comment') private commentModel: Model<Comment>
+        @InjectModel('Comment') private commentModel: Model<Comment>,
+        @InjectModel('User') private userModel: Model<User>, private jwtService: JwtAuthService
+
     ) {}
 
     async getCourseInfo(CourseCode: string): Promise<CourseInfo> {
         const course = await CourseInterface.getCourseInfo(CourseCode);
         // 使用 populate 获取评论相关联的用户信息
-        const courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode })
-            .populate({
-                path: 'comments.userId', // 指定要填充的字段
-                model: 'User', // 指定关联的模型
-                select: 'username' // 仅选择 username 字段
-            });
+        const courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
 
         console.log("CourseCode:", CourseCode);
         console.log("courseFromMongo", courseFromMongo);
         console.log("course", course);
-
+        let commentsWithNicknames = [];
         if (course) {
-            const courseInfo: CourseInfo = {
-                basicInfo: course,
-                comments: courseFromMongo ? courseFromMongo.comments.map(comment => {
+            if (courseFromMongo) {
+                commentsWithNicknames = await Promise.all(courseFromMongo.comments.map(async (comment) => {
+                    const user = await this.userModel.findOne({ username: comment.username }).select('nickname');
+
                     return {
                         text: comment.text,
-                        userId: comment.userId,
                         updatedAt: comment.updatedAt,
-                        username: (comment.userId as any).username, // 使用类型断言
+                        nickname: user ? user.nickname : null, // 如果找到用户，则返回昵称，否则返回 null
                         difficulty: comment.difficulty,
                         usefulness: comment.usefulness,
                         workload: comment.workload
                     };
-                }) : [] // 如果 courseFromMongo 为空，则返回空数组
+                }));
+            }
+            const courseInfo: CourseInfo = {
+                basicInfo: course,
+                comments: commentsWithNicknames
             };
             return courseInfo;
         } else {
@@ -49,42 +52,19 @@ export class CourseService {
         }
     }
 
-    // async createCourseComment(CourseCode: string, userId: string, text: string, rating: number) {
-    //
-    //     const course = await CourseInterface.getCourseInfo(CourseCode);
-    //     if (!course) {
-    //         throw new Error('Course not found');
-    //     }
-    //     let courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
-    //     console.log("courseFromMongo", courseFromMongo);
-    //
-    //     if(!courseFromMongo) {
-    //         const newCourse = new this.courseModel({
-    //             courseCode: CourseCode,
-    //             comments: []
-    //         });
-    //         await newCourse.save();
-    //
-    //     }
-    //     courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
-    //     console.log("courseFromMongo after create", courseFromMongo);
-    //
-    //     // 确保这里使用的是针对评论的模型
-    //     const newComment = new this.commentModel({
-    //         text: text,
-    //         userId: userId, // 如果 userId 已经是字符串形式的 ObjectId，则无需转换
-    //         updatedAt: new Date(),
-    //         rating: rating
-    //     });
-    //     console.log("newComment", newComment);
-    //     courseFromMongo.comments.push(newComment);
-    //     await courseFromMongo.save();
-    //     console.log("courseFromMongo after save", courseFromMongo);
-    //     return newComment;
-    // }
+
+
 
     async createCourseComment(createCommentDto: CreateCommentDto) {
-        const { courseCode, userId, text, difficulty, usefulness, workload } = createCommentDto;
+        const { courseCode, token, text, difficulty, usefulness, workload } = createCommentDto;
+
+        const username = await this.jwtService.verifyToken(token, 'access')
+        // 验证用户是否有权限评论
+        const userfromMoogo = await this.userModel.findOne({username: username});
+        if (!userfromMoogo) {
+            throw new Error("Authentication failed");
+        }
+
         const upperCaseCode = courseCode.toUpperCase();
 
         const course = await CourseInterface.getCourseInfo(upperCaseCode);
@@ -111,7 +91,7 @@ export class CourseService {
         // Create a new comment
         const newComment = new this.commentModel({
             text: text,
-            userId: userId, // Assuming userId is already a string ObjectId
+            username: username, // Assuming username is already a string ObjectId
             updatedAt: new Date(),
             difficulty: difficulty,
             usefulness: usefulness,
@@ -130,19 +110,28 @@ export class CourseService {
 
     //TODO：是否需要更改评论
 
-    async deleteCourseComment(deleteCommentID: string) {
-        console.log("deleteCommentID", deleteCommentID);
+    async deleteCourseComment(deleteCommentDto: DeleteCommentDto) {
+        console.log("deleteCommentID", deleteCommentDto);
+        const { commentID, token } = deleteCommentDto;
+        const username = await this.jwtService.verifyToken(token, 'access');
+
+        // 验证用户是否有权限删除评论
+        const userfromMoogo = await this.userModel.findOne({username: username});
+        if (!userfromMoogo) {
+            throw new Error("Authentication failed");
+        }
+
         // 假设 courseModel 是指向课程集合的模型
         const result = await this.courseModel.updateMany(
-            { "comments._id": deleteCommentID },
-            { $pull: { comments: { _id: deleteCommentID } } }
+            { "comments._id": commentID },
+            { $pull: { comments: { _id: commentID } } }
         );
 
         if (result.modifiedCount === 0) {
             throw new Error('Course comment not found or already deleted');
         }
 
-        return deleteCommentID + " has been deleted";
+        return commentID + " has been deleted";
 
     }
 }

@@ -3,17 +3,17 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { userSchema } from './user.model';
-import { ConfigModule } from '@nestjs/config';
+import { JwtAuthService } from 'src/jwt.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-        }),
+
         MongooseModule.forFeature([{ name: 'User', schema: userSchema }]),
-        MongooseModule.forRoot(process.env.MONGO_URI),
+
     ],
+    exports: [UserService, JwtAuthService, JwtAuthService, MongooseModule.forFeature([{ name: 'User', schema: userSchema }])], // 导出 JwtAuthService
     controllers: [UserController],
-    providers: [UserService],
+    providers: [UserService,JwtAuthService, JwtService],
 })
 export class UserModule {}

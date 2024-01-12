@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class createProfileDto {
-    @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
-    username: string;
+    @ApiProperty({ example: 'sdfhskldhf82hsfdhjkf', description: 'The username of the user' })
+    token: string;
 
     @ApiProperty({ example: 'program1', description: 'user programs' })
     program: string;
