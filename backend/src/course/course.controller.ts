@@ -1,7 +1,9 @@
 import {Controller, Get, Post, HttpException, HttpStatus, Param, Put, Query, Body, Delete} from '@nestjs/common';
 import {CourseService } from './course.service';
 import {ApiOperation, ApiResponse} from "@nestjs/swagger";
-import {DeleteCommentDto, CourseDto, CreateCommentDto, } from "./course.dto";
+import {DeleteCommentDto,CourseInfoDto, CreateCommentReturnDto,CreateCommentDto} from "./course.dto";
+
+
 
 
 @Controller('course')
@@ -15,7 +17,7 @@ export class CourseController {
     @ApiResponse({
         status: 200,
         description: 'The Course details',
-        type: CourseDto,
+        type: CourseInfoDto,
     })
     async getCourseInfo(@Param('CourseCode') CourseCode: string) {
         try {
@@ -37,7 +39,7 @@ export class CourseController {
     @ApiResponse({
         status: 200,
         description: 'The Course details',
-        type: CreateCommentDto, // 指定返回的类型是 UserDto
+        type: CreateCommentReturnDto, // 指定返回的类型是 UserDto
     })
     async createCourseComment(@Body() createCommentDto: CreateCommentDto) {
         try {

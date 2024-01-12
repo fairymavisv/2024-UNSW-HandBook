@@ -21,30 +21,30 @@ export class CourseService {
     async getCourseInfo(CourseCode: string): Promise<CourseInfo> {
         const course = await CourseInterface.getCourseInfo(CourseCode);
         // 使用 populate 获取评论相关联的用户信息
-        const courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode })
-            .populate({
-                path: 'comments.username', // 指定要填充的字段
-                model: 'User', // 指定关联的模型
-                select: 'nickname' // 仅选择 username 字段
-            });
+        const courseFromMongo = await this.courseModel.findOne({ courseCode: CourseCode });
 
         console.log("CourseCode:", CourseCode);
         console.log("courseFromMongo", courseFromMongo);
         console.log("course", course);
-
+        let commentsWithNicknames = [];
         if (course) {
-            const courseInfo: CourseInfo = {
-                basicInfo: course,
-                comments: courseFromMongo ? courseFromMongo.comments.map(comment => {
+            if (courseFromMongo) {
+                commentsWithNicknames = await Promise.all(courseFromMongo.comments.map(async (comment) => {
+                    const user = await this.userModel.findOne({ username: comment.username }).select('nickname');
+
                     return {
                         text: comment.text,
                         updatedAt: comment.updatedAt,
-                        nickname: (comment.username as any).nickname, // 使用类型断言
+                        nickname: user ? user.nickname : null, // 如果找到用户，则返回昵称，否则返回 null
                         difficulty: comment.difficulty,
                         usefulness: comment.usefulness,
                         workload: comment.workload
                     };
-                }) : [] // 如果 courseFromMongo 为空，则返回空数组
+                }));
+            }
+            const courseInfo: CourseInfo = {
+                basicInfo: course,
+                comments: commentsWithNicknames
             };
             return courseInfo;
         } else {
@@ -53,10 +53,12 @@ export class CourseService {
     }
 
 
+
+
     async createCourseComment(createCommentDto: CreateCommentDto) {
         const { courseCode, token, text, difficulty, usefulness, workload } = createCommentDto;
 
-        const username = await this.jwtService.verifyToken(token);
+        const username = await this.jwtService.verifyToken(token, 'access')
         // 验证用户是否有权限评论
         const userfromMoogo = await this.userModel.findOne({username: username});
         if (!userfromMoogo) {
@@ -111,7 +113,7 @@ export class CourseService {
     async deleteCourseComment(deleteCommentDto: DeleteCommentDto) {
         console.log("deleteCommentID", deleteCommentDto);
         const { commentID, token } = deleteCommentDto;
-        const username = await this.jwtService.verifyToken(token);
+        const username = await this.jwtService.verifyToken(token, 'access');
 
         // 验证用户是否有权限删除评论
         const userfromMoogo = await this.userModel.findOne({username: username});

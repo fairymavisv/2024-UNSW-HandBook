@@ -10,60 +10,35 @@ import { JwtAuthService } from 'src/jwt.service';
 export class UserService {
     constructor(@InjectModel('User') private userModel: Model<User>, private jwtService: JwtAuthService) {}
 
-    async addUserCourses(token: string, courseIds: string[]): Promise<User> {
-        // 解析token
-        const username = await this.jwtService.verifyToken(token);
 
-        const user = await this.userModel.findOne({username: username});
+    // update user courses list
+    async updateUserCourse(token: string, courseId: string[]) {
+        const username = await this.jwtService.verifyToken(token, 'access');
+        const user = await this.userModel.findOne({ username: username });
+
         if (user) {
-            console.log('find user')
+            console.log('find user');
+
             // 确保 courseslist 字段存在
             if (!user.courseslist) {
                 user.courseslist = [];
             }
-            console.log('find user courseslist')
+            console.log('find user courseslist');
 
-            //确保 course id 都存在
-            for (const courseId of courseIds) {
-                const course = await CourseInterface.getCourseInfo(courseId);
-                if (!course) {
-                    throw new Error('Course not found');
-                }
-            }
-
-            user.courseslist = Array.from(new Set([...user.courseslist, ...courseIds]));
-            console.log('user courselist', user.courseslist)
-            await user.save();
-        }else {
-            throw new NotFoundException(`User with username ${username} not found or Authentication failed`);
-        }
-        return user;
-    }
-
-    async updateUserCourse(token: string, courseId: string[]): Promise<User> {
-        const username = await this.jwtService.verifyToken(token);
-        const user = await this.userModel.findOne({username: username});
-
-        if (user) {
-            console.log('find user')
-            // 确保 courseslist 字段存在
-            if (!user.courseslist) {
-                user.courseslist = [];
-            }
-            console.log('find user courseslist')
-
-            user.courseslist = user.courseslist.filter(m => !courseId.includes(m));
+            // 将 courseId 中的所有课程 ID 转换为大写
+            user.courseslist = courseId.map(id => id.toUpperCase());
             console.log('updated user courseslist', user.courseslist);
+
             await user.save();
-        }else {
+        } else {
             throw new NotFoundException(`User with username ${username} not found or Authentication failed`);
         }
-        return user;
+        return user.courseslist;
     }
 
 
     async getUser(token: string): Promise<User> {
-        const username = await this.jwtService.verifyToken(token);
+        const username = await this.jwtService.verifyToken(token, 'access');
         console.log('token:', token);
         console.log('username:', username);
         const user = await this.userModel.findOne({username: username}).select('-_id');;
@@ -79,7 +54,7 @@ export class UserService {
 
     async getUserCourses(token: string) {
         // 解析token
-        const username = await this.jwtService.verifyToken(token);
+        const username = await this.jwtService.verifyToken(token, 'access');
         console.log('get_user_course username:', username);
         const user = await this.userModel.findOne({username: username});
         if (user) {
@@ -94,7 +69,7 @@ export class UserService {
 
     async createUserProfile(user:createProfileDto) {
         // 解析token
-        const username = await this.jwtService.verifyToken(user.token);
+        const username = await this.jwtService.verifyToken(user.token, 'access');
         console.log('create_profiles_username:', username);
         // 检查用户是否存在于MongoDB数据库中
         let userfromMoogo = await this.userModel.findOne({username: username});
