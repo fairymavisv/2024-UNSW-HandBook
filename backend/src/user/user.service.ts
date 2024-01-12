@@ -41,15 +41,16 @@ export class UserService {
         const username = await this.jwtService.verifyToken(token, 'access');
         console.log('token:', token);
         console.log('username:', username);
-        const user = await this.userModel.findOne({username: username}).select('-_id');;
 
+        // 只选择需要的字段
+        const user = await this.userModel.findOne({ username: username })
+            .select('nickname program major courseslist -_id');
 
         console.log('Found user:', user);
         if (!user) {
             throw new NotFoundException(`User with username ${username} not found or Authentication failed`);
         }
         return user;
-
     }
 
     async getUserCourses(token: string) {
