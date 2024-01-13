@@ -41,6 +41,13 @@ export class CourseService {
                         workload: comment.workload
                     };
                 }));
+            }else{
+                const upperCaseCode = CourseCode.toUpperCase();
+                const newCourse = new this.courseModel({
+                    courseCode: upperCaseCode,
+                    comments: []
+                });
+                await newCourse.save();
             }
             const courseInfo: CourseInfo = {
                 basicInfo: course,
