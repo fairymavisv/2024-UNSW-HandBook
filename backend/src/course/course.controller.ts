@@ -25,7 +25,7 @@ export class CourseController {
             const upperCaseCode = CourseCode.toUpperCase();
             const CourseInfo = await this.programService.getCourseInfo(upperCaseCode);
             if (!CourseInfo) {
-                throw new HttpException('Program not found', HttpStatus.NOT_FOUND);
+                throw new HttpException('course not found', HttpStatus.NOT_FOUND);
             }
             return CourseInfo;
         } catch (error) {
