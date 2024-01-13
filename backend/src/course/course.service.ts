@@ -141,4 +141,58 @@ export class CourseService {
         return commentID + " has been deleted";
 
     }
+
+    async getRecommendCourse(){
+        //遍历mongoDB中所有的course，对于每一个course，算出它们的comment的difficulty，usefulness，workload的平均值
+        //然后根据这些平均值进行排序，返回前十个
+        const courses = await this.courseModel.find();
+        let courseList = [];
+        for(let i = 0; i < courses.length; i++){
+            let course = courses[i];
+            let difficulty = 0;
+            let usefulness = 0;
+            let workload = 0;
+            for(let j = 0; j < course.comments.length; j++){
+                let comment = course.comments[j];
+                difficulty += comment.difficulty;
+                usefulness += comment.usefulness;
+                workload += comment.workload;
+            }
+            difficulty /= course.comments.length;
+            usefulness /= course.comments.length;
+            workload /= course.comments.length;
+            courseList.push({
+                courseCode: course.courseCode,
+                difficulty: difficulty,
+                usefulness: usefulness,
+                workload: workload
+            });
+        }
+
+        //在courseList中，优先按照usefulness从大到小排序，如果usefulness相同，按照workload从小到大排序,如果workload相同，按照difficulty从小到大排序
+        courseList.sort(function(a, b){
+            if(a.usefulness !== b.usefulness){
+                return b.usefulness - a.usefulness;
+            }
+            else if(a.workload !== b.workload){
+                return a.workload - b.workload;
+            }
+            else{
+                return a.difficulty - b.difficulty;
+            }
+        });
+
+        //返回前5个,包括它们的三项平均值
+        let ret = [];
+        for(let i = 0; i < 5; i++){
+            let course = courseList[i];
+            ret.push({
+                courseCode: course.courseCode,
+                difficulty: course.difficulty,
+                usefulness: course.usefulness,
+                workload: course.workload
+            });
+        }
+        return ret;
+    }
 }

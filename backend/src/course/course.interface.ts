@@ -35,7 +35,26 @@ const mockCourseData = {
             "including software design, quality assurance, and project management.",
         conditions: ["COMP1511"],
         offerterms: ["Term1","Term2","Term3"]
+    },
+    COMP2521: {
+        code: "COMP2521",
+        name: "Data Structures and Algorithms",
+        UOC: 6,
+        description: "This course will introduce you to the fundamental concepts of data structures and algorithms, \ " +
+            "including sorting, searching, and graph algorithms.",
+        conditions: ["COMP1511"],
+        offerterms: ["Term1","Term2","Term3"]
+    },
+    COMP2511: {
+        code: "COMP2511",
+        name: "Object-Oriented Design & Programming",
+        UOC: 6,
+        description: "This course will introduce you to the fundamental concepts of object-oriented design and programming, \ " +
+            "including object-oriented design patterns and software testing.",
+        conditions: ["COMP2511"],
+        offerterms: ["Term1","Term2","Term3"]
     }
+
 };
 
 export const CourseInterface = {
