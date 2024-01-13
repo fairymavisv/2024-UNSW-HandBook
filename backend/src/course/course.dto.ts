@@ -70,3 +70,17 @@ export class CourseInfoDto{
     @ApiProperty({ type: [CommentDto], description: 'The comments of the course' })
     comments: CommentDto[];
 }
+
+export class recommendCourseReturnDto {
+    @ApiProperty({ example: 'COMP3431', description: 'The code of the course' })
+    courseCode: string;
+  
+    @ApiProperty({ example: 1, description: 'The difficulty of the course' })
+    difficulty: number;
+  
+    @ApiProperty({ example: 1, description: 'The usefulness of the course' })
+    usefulness: number;
+  
+    @ApiProperty({ example: 1, description: 'The workload of the course' })
+    workload: number;
+}
