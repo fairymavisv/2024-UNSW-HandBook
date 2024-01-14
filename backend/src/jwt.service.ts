@@ -18,7 +18,7 @@ export class JwtAuthService {
   private secret = 'unsw-handbookx';
 
   public generateAccessToken(username: string) {
-    return this.jwtService.sign({ username }, {secret: this.secret, expiresIn: '3m'});
+    return this.jwtService.sign({ username }, {secret: this.secret, expiresIn: '15m'});
   }
 
   public generateRefreshToken(username: string) {
