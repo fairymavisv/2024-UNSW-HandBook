@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AuthPage from '@/views/AuthPage.vue'
+import CourseProfile from '@/views/CourseProfile.vue'
 
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", component: AuthPage},
   { path: "/register", component: AuthPage},
 
+  // route for course profile
+  { path: "/courseprofile/:courseId", component: CourseProfile},
 
   {
     path: '/courseList',
