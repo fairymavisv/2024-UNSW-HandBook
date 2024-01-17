@@ -111,6 +111,12 @@ export class AuthService {
       return new submitNicknameResponse(404, 'User does not exist');
     }
 
+    // 检查昵称是否已经存在于MongoDB数据库中
+    const existingNickname = await this.userModel.findOne({ nickname: nickName.nickName });
+    if (existingNickname) {
+      return new submitNicknameResponse(404, 'Nickname has been used');
+    }
+
     // 更改此用户昵称
     existingUser.nickname = nickName.nickName;
     await existingUser.save();
