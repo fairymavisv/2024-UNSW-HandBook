@@ -1,44 +1,66 @@
 <template>
     <div class="app">
-        <aside class="sidebar">
-            <Menu style="width: 3em; height: 3em; margin-top: 20px; margin-bottom: 30px;" />
-            <Search style="width: 3em; height: 3em; margin-top: 20px;" />
-            <User style="width: 3em; height: 3em; margin-top: 20px;" />
-            <Star style="width: 3em; height: 3em; margin-top: 20px;" />
-        </aside>
+        <el-divider />
         <main class="main-content">
-            <header class="header">
-                <h2>{{ courseName }}</h2>
-                <h5>{{ code }} | {{ UOC }} Units of Credit </h5>
-            </header>
-            <div class="course-info">
-                <div class="comment">
-                    <h3>Comments</h3>
-                    <el-scrollbar height="40    0px">
-                        <p v-for=" comment in comments" :key="comment.id" class="scrollbar-demo-item">{{ comment.text }}</p>
-                    </el-scrollbar>
-                </div>
-                <div class="ratings">
-                    <div class="rating-container">
-                        <div class="rating">
-                            <span>Difficulty:  </span>
-                            <el-rate v-model="scores[0]" disabled show-score text-color="#ff9900"
-                                score-template="{value} points" />
-                        </div>
-                        <div class="rating">
-                            <span>Usefulness:   </span>
-                            <el-rate v-model="scores[1]" disabled show-score text-color="#ff9900"
-                                score-template="{value} points" />
-                        </div>
-                        <div class="rating">
-                            <span>Workload:   </span>
-                            <el-rate v-model="scores[2]" disabled show-score text-color="#ff9900"
-                                score-template="{value} points" />
-                        </div>
+            <div class="first-row">
+                <div class="rounded-border-1">
+                    <div class="rounded-border-course">
+                        <h1>{{ courseName }}</h1>
                     </div>
-                    <div class="description">
+
+                    <div class="rounded-border-small">
+                        <h3>{{ code }}</h3>
+                    </div>
+
+                    <div class="rounded-border-small">
+                        <h3>{{ UOC }} UOC</h3>
+                    </div>
+
+                </div>
+                <div class="rounded-border-2">
+                    <div class="rating">
+                        <span>Difficulty: </span>
+                        <el-rate v-model="scores[0]" disabled show-score text-color="#ff9900"
+                            score-template="{value} points" />
+                    </div>
+                    <div class="rating">
+                        <span>Usefulness: </span>
+                        <el-rate v-model="scores[1]" disabled show-score text-color="#ff9900"
+                            score-template="{value} points" />
+                    </div>
+                    <div class="rating">
+                        <span>Workload: </span>
+                        <el-rate v-model="scores[2]" disabled show-score text-color="#ff9900"
+                            score-template="{value} points" />
+                    </div>
+                </div>
+            </div>
+            <div class="second-row">
+                <div class="rounded-border-3">
+                    <div class="rounded-border-small hover" @click="current = 'summery'">
+                        <h3>summery</h3>
+                    </div>
+                    <div class="rounded-border-small hover" @click="current = 'comments'">
+                        <h3>comments</h3>
+                    </div>
+                </div>
+
+                <div class="rounded-border-4">
+                    <div v-if="current === 'summery'" class="rounded-border-small">
+                        <h3>description:</h3>
                         <p>{{ description }}</p>
                     </div>
+                    <div v-if="current === 'summery'" class="rounded-border-small">
+                        <h3>offerterms:</h3>
+                        <p v-for="offerterm in offerterms" :key="offerterm">{{ offerterm }}&nbsp;</p>
+                    </div>
+
+                    <div v-if="current === 'comments'" class="rounded-border-small">
+                        <h3>comments</h3>
+                    </div>
+                    <el-scrollbar v-if="current === 'comments'" height="200px">
+                        <div v-for="item in comments" :key="item" class="scrollbar-demo-item"><h3>{{ item.text }}</h3></div>
+                    </el-scrollbar>
                 </div>
             </div>
         </main>
@@ -63,6 +85,8 @@ const comments = ref('This is a comment');
 const Difficulty = ref(0);
 const Usefulness = ref(0);
 const Workload = ref(0);
+const offerterms = ref('This is a offerterms');
+const current = ref('summery');
 
 onMounted(async () => {
     const data = await $fetchReq("course/" + courseId, "GET");
@@ -72,6 +96,7 @@ onMounted(async () => {
     courseName.value = data.basicInfo.name; // 更新课程名称
     description.value = data.basicInfo.description; // 更新课程描述
     comments.value = data.comments; // 更新评论
+    offerterms.value = data.basicInfo.offerterms; // 更新offerterms
     for (let i = 0; i < data.comments.length; i++) {
         Difficulty.value += data.comments[i].difficulty;
         Usefulness.value += data.comments[i].usefulness;
@@ -88,98 +113,116 @@ onMounted(async () => {
 </script>
   
 <style scoped>
-.app {
+.first-row {
     display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
-.sidebar {
-    width: 80px;
-    background-color: #e1e1e1;
-    height: 100vh;
-    padding-bottom: 20px;
-    box-sizing: border-box;
+.second-row {
     display: flex;
-    flex-direction: column-reverse;
-    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
-.sidebar div {
-    width: 50px;
-    height: 50px;
-    background-color: #555;
-    margin-bottom: 10px;
-}
-
-.main-content {
-    flex-grow: 1;
-}
-
-.header {
+.rounded-border-1 {
+    border: 2px solid #000000;
+    border-radius: 10px;
+    padding: 10px;
+    width: 70%;
+    height: 200px;
     background-color: #007bff;
-    color: white;
-    padding: 1em;
-    text-align: center;
-    height: 150px;
-    font-size: 30px;
-}
-
-.comment {
-    padding: 2em;
-    font-size: 1.5em;
-    width: 66%
-}
-
-.ratings {
-    background-color: #9997e1;
-    padding: 1em;
-    font-size: 1.5em;
-    width: 33%;
-    height: calc(100vh - 210px - 2em);
-}
-
-.rating {
-    margin: 1.5em 0;
-}
-
-.stars {
-    color: white;
-}
-
-.star {
-    color: grey;
-}
-
-.star.filled {
-    color: gold;
-}
-
-.description {
-    color: black;
-    margin-top: 1em;
-    font-size: 1em;
-}
-
-.course-info {
     display: flex;
     flex-direction: row;
 }
 
-.rating-container {
-    margin-top: 5em;
+.rounded-border-2 {
+    border: 2px solid #000000;
+    border-radius: 10px;
+    padding: 10px;
+    width: 25%;
+    height: 200px;
+    background-color: #007bff;
+}
+
+.rounded-border-course {
+    border: 2px solid #000000;
+    border-radius: 30px;
+    width: auto;
+    height: 50%;
+    background-color: white;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    padding: 0 5%;
+    margin-top: 4%;
+}
+
+.rounded-border-small {
+    border: 2px solid #000000;
+    border-radius: 30px;
+    width: auto;
+    height: 20%;
+    background-color: white;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    padding: 0 5%;
+    margin-top: 4%;
+    margin-left: 1%;
+}
+
+.rating {
+    margin: 1.5em 0;
+    border: 2px solid #000000;
+    border-radius: 30px;
+    background-color: white;
+    width: auto;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+.rounded-border-3 {
+    border: 2px solid #000000;
+    border-radius: 10px;
+    padding: 10px;
+    width: 20%;
+    height: 300px;
+    background-color: #007bff;
+    margin-top: 5%;
     display: flex;
     flex-direction: column;
-    height: 50%;
+    justify-content: space-around;
+}
+
+.rounded-border-4 {
+    border: 2px solid #000000;
+    border-radius: 10px;
+    padding: 10px;
+    width: 70%;
+    height: 500px;
+    background-color: #007bff;
+    margin-top: 5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.hover {
+    cursor: pointer;
 }
 
 .scrollbar-demo-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100px;
-    margin: 10px;
-    text-align: center;
-    border-radius: 4px;
-    background: var(--el-color-primary-light-9);
-    color: var(--el-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  margin: 10px;
+  text-align: center;
+  border-radius: 4px;
+  background: white;
+  color: black;
+  border: 2px solid #000000;
+    border-radius: 30px;
 }
 </style>
