@@ -6,9 +6,16 @@ use wasm_bindgen::convert::OptionIntoWasmAbi;
 
 use crate::{course::{Course, CourseManager, self}, utlis::{CourseCode, ProgramCode}, program};
 
+// #[derive(Clone)]
 pub struct Requirements {
-    contents: Option<Box<dyn Node + Send>>
-
+    // TODO: Maybe use Rc in the future steps for optimizing memory usage
+    contents: Option<Box<dyn Node + Send>>,
+    raw: String
+}
+impl Clone for Requirements {
+    fn clone(&self) -> Self {
+        Requirements::try_new(&self.raw).unwrap()
+    }
 }
 
 impl Display for Requirements {
@@ -74,26 +81,40 @@ macro_rules! extract_prerequisite {
 
 
 fn print_buffer(buf: &Vec<Box<dyn Node + Send>>) {
-    println!("Buffer tokens: {}", buf.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
+
+    // println!("Buffer tokens: {}", buf.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
 
 }
 
 
 impl Requirements {
     pub fn try_new(raw_requirements: &str) -> Option<Requirements> {
+        // println!("Parsing raw requirement {}", raw_requirements);
         let cleaned_requirements = Requirements::clean(raw_requirements);
         let mut tokens = Requirements::tokenize(cleaned_requirements.as_str());
         let node = Requirements::parse(&mut tokens);
         if node.is_err() {
-            println!("{}", node.err().unwrap());
+            println!("Error: {}", node.err().unwrap());
             None
         } else {
             Some(Requirements {
-                contents: node.unwrap()
+                contents: node.unwrap(),
+                raw: raw_requirements.to_string(),
             })
         }
     }
 
+    pub fn is_satisified(&self, program_code: &str, taken_course:&Vec<String>, wam: &Option<u8>, course_manager: &CourseManager) -> Result<bool, String> {
+        if self.contents.is_none() {
+            Ok(true)
+        } else {
+            self.contents.as_ref().unwrap().evulate(program_code, taken_course, wam, course_manager)
+        }
+        // todo!()
+    }
+
+
+    
     fn clean(raw_requirements: &str) -> String {
         let cleaned_lines = raw_requirements.trim().replace("[", " [ ")
             .replace("]", " ] ")
@@ -191,7 +212,7 @@ impl Requirements {
             }
         
         }
-        println!("Tokens: {:?}", tokens);
+        // println!("Tokens: {:?}", tokens);
         tokens
     }
 
@@ -222,15 +243,15 @@ impl Requirements {
             }
             match token.unwrap() {
                 Token::TEXT(text) => {
-                    println!("{}", text);
+                    // println!("{}", text);
                     buffer.push(Box::new(TextNode::new(text)));
                 },
                 Token::CODE(code) => {
-                    println!("{:?}", code);
+                    // println!("{:?}", code);
                     buffer.push(Box::new(CodeNode::new(code)));
                 },
                 Token::OPERATOR(operator) => {
-                    println!("line 239 tokens {:?}", operator);
+                    // println!("line 239 tokens {:?}", operator);
                     if buffer.len() == 1 {
                         let left = buffer.pop().unwrap();
                         // print_buffer(tokens);
@@ -264,7 +285,7 @@ impl Requirements {
                     }
                 },
                 Token::NUMBER(number) => {
-                    println!("{}", number);
+                    // println!("{}", number);
                     let next = tokens.pop();
                     if next.is_none() {
                         println!("Warning (NUM-1): Number without following token.");
@@ -285,7 +306,7 @@ impl Requirements {
                                             match preposition {
                                                 Preposition::FROM => {
                                                     let mut node = Box::new(UOCFromNode::new(number ));
-                                                    println!("line 275 Tokens: {:?}", tokens);
+                                                    // println!("line 275 Tokens: {:?}", tokens);
                                                     if node.parse(tokens)? == () {
                                                         buffer.push(node);
 
@@ -326,10 +347,10 @@ impl Requirements {
                         print_buffer(&buffer);
                         return Err(String::from("ERROR (COM-1): There are more than one node in the buffer."));
                     }                     
-                    println!(",");
+                    // println!(",");
                 },
                 Token::BRACKET(bracket) => {
-                    println!("{:?}", bracket);
+                    // println!("{:?}", bracket);
                     let mut num_bracket = 1;
                     let mut sub_token: Vec<Token> = Vec::new();
                     // sub_token.push(Token::BRACKET(bracket));
@@ -351,7 +372,7 @@ impl Requirements {
                         }
                     }
                     sub_token.pop();
-                    println!("Sub Token{:?}", sub_token);
+                    // println!("Sub Token{:?}", sub_token);
                     let node = Requirements::parse(&mut sub_token)?;
                     if let Some(node) = node {
                         buffer.push(node);
@@ -368,7 +389,7 @@ impl Requirements {
                         },
                         _ => println!("Warning (KEY-1): Keyword {} is not supported yet", "keyword"),
                     }
-                    println!("{:?}", keyword);
+                    // println!("{:?}", keyword);
                 },
                 _  => ()
             }
@@ -580,7 +601,7 @@ impl UOCFromNode {
 impl Node for UOCFromNode {
     fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         tokens.pop();
-        println!("line 520 Tokens: {:?}", tokens);
+        // println!("line 520 Tokens: {:?}", tokens);
         loop {
             let token = tokens.pop();
             if token.is_none() {
