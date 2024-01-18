@@ -209,14 +209,14 @@ impl CourseManager {
         }).collect::<HashMap<String, Vec<ExclusionCondition>>>()
     }
 
-    pub fn get_course(&self, course_code: &CourseCode) -> Result<Course, String> {
+    pub fn get_course(&self, course_code: &CourseCode) -> Result<&Course, String> {
         if !course_code.is_specific_course() {
             return  Err(String::from(format!("Expect a specific course code, rather than {}", &course_code)));
         }
         if !self.courses.contains_key(&course_code.to_string()) {
             return Err(String::from(format!("{} cannot found in dataset", &course_code)));
         }
-        Ok(self.courses.get(&course_code.to_string()).unwrap().clone())
+        Ok(self.courses.get(&course_code.to_string()).unwrap())
     }
 
     

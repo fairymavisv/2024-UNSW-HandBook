@@ -248,13 +248,6 @@ impl AlternativeCourse {
             courses
         }
     }
-    // fn from_str(courses: &str) -> Self {
-    //     let mut buf = Vec::new();
-    //     for course in courses.split("or") {
-    //         buf.push(CourseCode::parse(course.trim()).expect(courses));
-    //     }
-    //     Self { courses: buf }
-    // }
 
     fn from_str(courses: &str) -> Option<Self> {
         let mut buf = Vec::new();
@@ -364,6 +357,22 @@ pub enum Rules {
     Info(InfoRule),
     Limit(InfoRule)
 }
+impl Rules {
+    pub fn title(&self) -> &str {
+        match self {
+            Rules::Info(i) => i.title(),
+            Rules::Limit(l) => l.title()
+        }
+    }
+
+    pub fn body(&self) -> &str {
+        match self {
+            Rules::Info(i) => i.body(),
+            Rules::Limit(l) => l.body()
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct InfoRule {
     title: String,
@@ -384,6 +393,7 @@ impl InfoRule {
     }
 
 }
+
 
 pub struct ProgramManager {
     programs: HashMap<String, Program>,
@@ -423,17 +433,17 @@ impl ProgramManager {
         &self.specialiastions
     }
 
-    pub fn get_program(&self, code: &ProgramCode) -> Result<Program, String> {
+    pub fn get_program(&self, code: &ProgramCode) -> Result<&Program, String> {
         if let Some(course) = self.programs.get(&code.to_string()) {
-            Ok(course.clone())
+            Ok(course)
         } else {
             Err(String::from(format!("{} cannot found in dataset", &code)))
         }
     }
 
-    pub fn get_specialiastion(&self, code: &str) -> Result<Specialisation, String> {
+    pub fn get_specialiastion(&self, code: &str) -> Result<&Specialisation, String> {
         if let Some(specialisation) = self.specialiastions.get(&code.to_string()) {
-            Ok(specialisation.clone())
+            Ok(specialisation)
         } else {
             Err(String::from(format!("{} cannot found in dataset", &code)))
         }
@@ -505,8 +515,11 @@ impl Builder<Rules> for ProgramComponentBuilder {
             "limit_rule" => {
                 let title = json.get("title")?.as_str()?;
                 let notes = json.get("notes")?.as_str()?;
-                Some(Rules::Limit(InfoRule::new(title.to_string(), notes.to_string())))
-
+                let course_msgs = json.get("courses")?.as_object()?.values().map(|value| value.as_str().unwrap().to_string()).collect::<Vec<String>>().join("\n- ");
+                let mut buf = notes.to_string();
+                buf.push('\n');
+                buf.push_str(&course_msgs);
+                Some(Rules::Limit(InfoRule::new(title.to_string(), buf)))
             },
             _ => None
         }
@@ -534,9 +547,9 @@ mod tests {
         assert_eq!(program.code(), "3784");
         assert_eq!(program.uoc, 192);
         assert_eq!(program.duration, 4);
-        let course_components = program.course_components.unwrap();
+        let course_components = program.course_components.as_ref().unwrap().clone();
         assert_eq!(course_components.len(), 4);
-        let specialisation = program.specialisation_component.unwrap();
+        let specialisation = program.specialisation_component.as_ref().unwrap().clone();
         assert!(specialisation.honours.is_none());
         assert_eq!(specialisation.major.unwrap().len(), 2);
         assert_eq!(specialisation.minor.unwrap().len(), 1);
@@ -559,7 +572,7 @@ mod tests {
         let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
                                     "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
         let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
-        let course_components = program.course_components.unwrap();
+        let course_components = program.course_components.as_ref().unwrap();
         assert_eq!(course_components.len(), 4);
         assert_eq!(course_components.get("Final Year Synthesis").unwrap().courses.len(), 12);
         assert!(course_components.get("Final Year Synthesis").unwrap().courses.contains(&Course::Course(CourseCode::from_str("ACCT3583").unwrap())));
@@ -570,7 +583,7 @@ mod tests {
         let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
                                     "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
         let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
-        let rules = program.rules;
+        let rules = program.rules.clone();
         assert_eq!(rules.len(), 4);
     }
 
@@ -579,7 +592,7 @@ mod tests {
         let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
                                     "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
         let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
-        let specialisation = program.specialisation_component.unwrap();
+        let specialisation = program.specialisation_component.as_ref().unwrap();
         let specialisation_view = specialisation.major.as_ref().unwrap().get("Computer Science").unwrap();
         assert_eq!(specialisation_view.specialisations.len(), 8);
     }
@@ -589,7 +602,7 @@ mod tests {
         let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
                                     "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
         let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
-        let specialisation = program.specialisation_component.unwrap();
+        let specialisation = program.specialisation_component.as_ref().unwrap();
         let specialisation_view = specialisation.minor.as_ref().unwrap().get("Commerce").unwrap();
         assert_eq!(specialisation_view.specialisations.len(), 14);
     }
