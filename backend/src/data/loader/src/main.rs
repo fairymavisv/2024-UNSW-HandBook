@@ -6,6 +6,7 @@ mod course;
 mod requirements;
 mod utlis;
 mod program;
+mod search;
 
 
 // #[cfg(feature = "wee_alloc")]

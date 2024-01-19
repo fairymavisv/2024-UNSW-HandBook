@@ -56,8 +56,6 @@ impl Program {
             None
         };
         // TODO: build components from spec part
-        // let spec = json_components.get("spec_data")
-        // let spec = 
         let specialisation_component = if let Some(spec_data ) = json_components.get("spec_data") {
             let spec = spec_data.as_object().unwrap();
             ProgramComponentBuilder::build(spec)
@@ -102,17 +100,19 @@ impl Program {
         &self.overview
     }
 
-    pub fn course_component(&self) -> &Option<HashMap<String, CourseComponent>> {
-        &self.course_components
+    pub fn course_component(&self) -> Option<&HashMap<String, CourseComponent>> {
+        self.course_components.as_ref()
     }
 
-    pub fn specialisation_component(&self) -> &Option<SpecialisationComponent> {
-        &self.specialisation_component
+    pub fn specialisation_component(&self) -> Option<&SpecialisationComponent> {
+        self.specialisation_component.as_ref()
     }
 
     pub fn rules(&self) -> &Vec<Rules> {
         &self.rules
     }
+
+
     
 }
 
@@ -174,9 +174,10 @@ impl Specialisation {
         &self.course_components
     }
 
-    pub fn constraints(&self) -> &Option<Vec<Constraints>> {
-        &self.constraints
+    pub fn constraints(&self) -> Option<&Vec<Constraints>> {
+        self.constraints.as_ref()
     }
+
 }
 
 #[derive(Clone)]
@@ -215,6 +216,7 @@ impl Course {
             Course::Text(course_code.to_string())
         }
     }
+    
 }  
 
 impl PartialEq for Course {
@@ -325,6 +327,7 @@ impl SpecialisationView {
         &self.notes
     }
 }
+
 #[derive(Clone)]
 pub struct SpecialisationComponent {
     major: Option<HashMap<String, SpecialisationView>>,
@@ -338,16 +341,16 @@ impl SpecialisationComponent {
         Self { major, minor, honours }
     }
 
-    pub fn major(&self) -> &Option<HashMap<String, SpecialisationView>> {
-        &self.major
+    pub fn major(&self) -> Option<&HashMap<String, SpecialisationView>> {
+        self.major.as_ref()
     }
 
-    pub fn minor(&self) -> &Option<HashMap<String, SpecialisationView>> {
-        &self.minor
+    pub fn minor(&self) -> Option<&HashMap<String, SpecialisationView>> {
+        self.minor.as_ref()
     }
 
-    pub fn honours(&self) -> &Option<HashMap<String, SpecialisationView>> {
-        &self.honours
+    pub fn honours(&self) -> Option<&HashMap<String, SpecialisationView>> {
+        self.honours.as_ref()
     }
 
 }
@@ -448,6 +451,8 @@ impl ProgramManager {
             Err(String::from(format!("{} cannot found in dataset", &code)))
         }
     }
+
+    
 
 
 }
