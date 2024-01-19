@@ -326,6 +326,10 @@ impl SpecialisationView {
     pub fn notes(&self) -> &str {
         &self.notes
     }
+
+    pub fn is_optional(&self) -> bool {
+        self.is_optional
+    }
 }
 
 #[derive(Clone)]
