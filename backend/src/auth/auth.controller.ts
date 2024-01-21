@@ -1,9 +1,10 @@
 // auth.controller.ts
 
-import { Body, Controller, Post, Headers } from '@nestjs/common';
+import { Body, Controller, Post, Headers, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { loginBodyDto, loginResponse, nickNameBodyDto, registerBodyDto, registerResponse, sendVerificationCodeDto, submitNicknameResponse, vertificationResponse } from './auth.dto';
 import { ApiResponse } from '@nestjs/swagger';
+import { UserGuard } from 'src/userGuard';
 
 @Controller('auth')
 export class AuthController {
@@ -33,6 +34,7 @@ export class AuthController {
   }
 
   @Post('submitNickname')
+  @UseGuards(UserGuard)
   @ApiResponse({ status: 404, description: 'user not found' })
   @ApiResponse({
       status: 200,
@@ -40,7 +42,6 @@ export class AuthController {
       type: submitNicknameResponse
   })
   async submitNickname(@Body() body: nickNameBodyDto, @Headers('authorization') accessToken: string): Promise<any> {
-    accessToken = accessToken.replace('Bearer ', '');
     return this.authService.submitNickname(body, accessToken);
   }
 
