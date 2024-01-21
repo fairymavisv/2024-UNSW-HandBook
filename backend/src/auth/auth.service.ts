@@ -104,17 +104,13 @@ export class AuthService {
 
     // 解析token
     const username = await this.jwtService.verifyToken(accessToken, 'access')
-
-    // 检查用户是否存在于MongoDB数据库中
     const existingUser = await this.userModel.findOne({ username: username });
-    if (!existingUser) {
-      return new submitNicknameResponse(404, 'User does not exist');
-    }
+
 
     // 检查昵称是否已经存在于MongoDB数据库中
     const existingNickname = await this.userModel.findOne({ nickname: nickName.nickName });
     if (existingNickname) {
-      return new submitNicknameResponse(404, 'Nickname has been used');
+      return new submitNicknameResponse(404, 'This nickname has been used');
     }
 
     // 更改此用户昵称
