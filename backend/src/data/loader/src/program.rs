@@ -1,8 +1,11 @@
-use std::{hash::Hash, collections::HashMap, process::Output, fs, fmt::Display};
+use std::{collections::HashMap, fmt::Display, fs, hash::Hash, process::Output};
 
-use crate::{utlis::{ProgramCode, StudyLevel, CourseCode}, course};
+use crate::{
+    course,
+    utlis::{CourseCode, ProgramCode, StudyLevel},
+};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 #[derive(Clone)]
 pub struct Program {
     title: String,
@@ -12,9 +15,8 @@ pub struct Program {
     overview: String,
     structure_summary: String,
     course_components: Option<HashMap<String, CourseComponent>>,
-    specialisation_component : Option<SpecialisationComponent>,
-    rules: Vec<Rules>
-
+    specialisation_component: Option<SpecialisationComponent>,
+    rules: Vec<Rules>,
 }
 
 impl Program {
@@ -23,30 +25,43 @@ impl Program {
         let code = ProgramCode::from_str(json.get("code").unwrap().as_str().unwrap()).unwrap();
         let uoc = json.get("UOC").unwrap().as_i64().unwrap() as u8;
         let duration = json.get("duration").unwrap().as_i64().unwrap() as u8;
-        let overview = json.get("overview").unwrap().as_str().unwrap_or("").to_string();
-        let structure_summary = json.get("structure_summary").unwrap().as_str().unwrap_or("").to_string();
+        let overview = json
+            .get("overview")
+            .unwrap()
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+        let structure_summary = json
+            .get("structure_summary")
+            .unwrap()
+            .as_str()
+            .unwrap_or("")
+            .to_string();
         let json_components = json.get("components").unwrap().as_object().unwrap();
-        
+
         let mut buffed_rules: Vec<Rules> = Vec::new();
         // TODO: build components from non-spec part
         let course_components = if let Some(non_spec) = json_components.get("non_spec_data") {
             let non_spec = non_spec.as_array().unwrap();
             let mut buffed_components: HashMap<String, CourseComponent> = HashMap::new();
-            non_spec.iter().map(|object| object.as_object().unwrap()).for_each(|object| {
-                let rules_type = object.get("type").expect(&title).as_str().unwrap();
-                match rules_type {
-                    "prescribed_electives" | "core_courses" => {
-                        let component: CourseComponent = ProgramComponentBuilder::build(object).unwrap();
-                        buffed_components.insert(component.title.clone(), component);
-                    },
-                    "info_rule" | "limit_rule" => {
-                        let rule : Rules = ProgramComponentBuilder::build(object).unwrap();
-                        buffed_rules.push(rule);
-                    },
-                    _ => ()
-                }
-        
-            });
+            non_spec
+                .iter()
+                .map(|object| object.as_object().unwrap())
+                .for_each(|object| {
+                    let rules_type = object.get("type").expect(&title).as_str().unwrap();
+                    match rules_type {
+                        "prescribed_electives" | "core_courses" => {
+                            let component: CourseComponent =
+                                ProgramComponentBuilder::build(object).unwrap();
+                            buffed_components.insert(component.title.clone(), component);
+                        }
+                        "info_rule" | "limit_rule" => {
+                            let rule: Rules = ProgramComponentBuilder::build(object).unwrap();
+                            buffed_rules.push(rule);
+                        }
+                        _ => (),
+                    }
+                });
             if buffed_components.len() == 0 {
                 None
             } else {
@@ -56,23 +71,23 @@ impl Program {
             None
         };
         // TODO: build components from spec part
-        let specialisation_component = if let Some(spec_data ) = json_components.get("spec_data") {
+        let specialisation_component = if let Some(spec_data) = json_components.get("spec_data") {
             let spec = spec_data.as_object().unwrap();
             ProgramComponentBuilder::build(spec)
         } else {
             None
         };
 
-        Self { title: title, 
-            code: code, 
-            uoc: uoc, 
+        Self {
+            title: title,
+            code: code,
+            uoc: uoc,
             duration: duration,
-            overview: overview, 
-            structure_summary: 
-            structure_summary, 
-            course_components: course_components, 
+            overview: overview,
+            structure_summary: structure_summary,
+            course_components: course_components,
             specialisation_component: specialisation_component,
-            rules: buffed_rules 
+            rules: buffed_rules,
         }
     }
 
@@ -111,18 +126,34 @@ impl Program {
     pub fn rules(&self) -> &Vec<Rules> {
         &self.rules
     }
+}
 
+#[derive(Clone)]
+pub enum SpecialisationType {
+    Major,
+    Minor,
+    Honours,
+}
 
-    
+impl Display for SpecialisationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SpecialisationType::Major => write!(f, "Major"),
+            SpecialisationType::Minor => write!(f, "Minor"),
+            SpecialisationType::Honours => write!(f, "Honours"),
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct Specialisation {
-    name:  String,
+    name: String,
+    spec_type: SpecialisationType,
     uoc: u8,
     code: String,
     course_components: HashMap<String, CourseComponent>,
-    constraints: Option<Vec<Constraints>>
+    constraints: Option<Vec<Constraints>>,
+    programs: Vec<ProgramCode>,
 }
 
 impl Specialisation {
@@ -131,21 +162,55 @@ impl Specialisation {
         let code = json.get("code").unwrap().as_str().unwrap().to_string();
         let uoc = json.get("UOC").unwrap().as_i64().unwrap() as u8;
         let curriculum = json.get("curriculum").unwrap().as_array().unwrap();
-        let course_components: HashMap<String, CourseComponent> = curriculum.iter().map(|object| {
-            let json = object.as_object().unwrap();
-            let course_component: CourseComponent = ProgramComponentBuilder::build(json).unwrap();
-            (course_component.title.clone(), course_component)
-        }).collect();
+        let course_components: HashMap<String, CourseComponent> = curriculum
+            .iter()
+            .map(|object| {
+                let json = object.as_object().unwrap();
+                let course_component: CourseComponent =
+                    ProgramComponentBuilder::build(json).unwrap();
+                (course_component.title.clone(), course_component)
+            })
+            .collect();
         let constraints = json.get("course_constraints").unwrap().as_array().unwrap();
-        let constraints: Vec<Constraints> = constraints.iter().map(|object| {
-            let constraint = object.as_object().unwrap();
-            let title = constraint.get("title").unwrap().as_str().unwrap().to_string();
-            let description = constraint.get("description").unwrap().as_str().unwrap().to_string();
-            Constraints::new(title, description)
-        }).collect();
-
+        let constraints: Vec<Constraints> = constraints
+            .iter()
+            .map(|object| {
+                let constraint = object.as_object().unwrap();
+                let title = constraint
+                    .get("title")
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+                let description = constraint
+                    .get("description")
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+                Constraints::new(title, description)
+            })
+            .collect();
+        let programs = json
+            .get("programs")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|object| {
+                let program_code = object.as_str().unwrap();
+                ProgramCode::from_str(program_code).unwrap()
+            })
+            .collect();
+        let spec_type = match json.get("type").unwrap().as_str().unwrap() {
+            "major" => SpecialisationType::Major,
+            "minor" => SpecialisationType::Minor,
+            "honours" => SpecialisationType::Honours,
+            _ => panic!("Invalid specialisation type"),
+        };
         Self {
             name,
+            spec_type,
             uoc,
             code,
             course_components,
@@ -153,13 +218,17 @@ impl Specialisation {
                 None
             } else {
                 Some(constraints)
-            }
+            },
+            programs,
         }
- 
     }
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn spec_type(&self) -> &SpecialisationType {
+        &self.spec_type
     }
 
     pub fn uoc(&self) -> u8 {
@@ -178,19 +247,19 @@ impl Specialisation {
         self.constraints.as_ref()
     }
 
+    pub fn programs(&self) -> &Vec<ProgramCode> {
+        &self.programs
+    }
 }
 
 #[derive(Clone)]
 pub struct Constraints {
     title: String,
-    description: String
+    description: String,
 }
 impl Constraints {
     fn new(title: String, description: String) -> Self {
-        Self {
-            title,
-            description
-        }
+        Self { title, description }
     }
     pub fn title(&self) -> &str {
         &self.title
@@ -200,14 +269,13 @@ impl Constraints {
     }
 }
 #[derive(Clone)]
-pub enum Course{
+pub enum Course {
     Course(CourseCode),
     Alternative(AlternativeCourse),
-    Text(String)
+    Text(String),
 }
 impl Course {
     fn new(course_code: &str) -> Self {
-
         if let Some(ac) = AlternativeCourse::from_str(course_code) {
             Course::Alternative(ac)
         } else if let Some(c) = CourseCode::parse(course_code.trim()) {
@@ -216,8 +284,15 @@ impl Course {
             Course::Text(course_code.to_string())
         }
     }
-    
-}  
+
+    pub fn to_course_codes(&self) -> Vec<CourseCode> {
+        match self {
+            Course::Course(c) => vec![c.clone()],
+            Course::Alternative(ac) => ac.courses.clone(),
+            Course::Text(_) => Vec::new(),
+        }
+    }
+}
 
 impl PartialEq for Course {
     fn eq(&self, other: &Self) -> bool {
@@ -230,51 +305,64 @@ impl Display for Course {
         match self {
             Course::Alternative(al) => al.fmt(f),
             Course::Course(c) => c.fmt(f),
-            Course::Text(t) => t.fmt(f)
+            Course::Text(t) => t.fmt(f),
         }
+    }
+}
+
+impl Hash for Course {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.to_string().hash(state);
+    }
+}
+
+impl Eq for Course {
+    fn assert_receiver_is_total_eq(&self) {
+        // do nothing
     }
 }
 
 #[derive(Clone)]
 pub struct AlternativeCourse {
-    courses: Vec<CourseCode>
+    courses: Vec<CourseCode>,
 }
 impl Display for AlternativeCourse {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.courses.iter().map(|code| code.to_string()).collect::<Vec<String>>().join(" or "))
+        write!(
+            f,
+            "{}",
+            self.courses
+                .iter()
+                .map(|code| code.to_string())
+                .collect::<Vec<String>>()
+                .join(" or ")
+        )
     }
 }
 impl AlternativeCourse {
     fn new(courses: Vec<CourseCode>) -> Self {
-        AlternativeCourse {
-            courses
-        }
+        AlternativeCourse { courses }
     }
 
     fn from_str(courses: &str) -> Option<Self> {
         let mut buf = Vec::new();
         for course in courses.split("or") {
-            if let Some(course_code ) = CourseCode::parse(course.trim()) {
+            if let Some(course_code) = CourseCode::parse(course.trim()) {
                 buf.push(course_code);
             } else {
-                return None
+                return None;
             }
         }
         Some(Self { courses: buf })
-
     }
-
-
 }
-
-
 
 #[derive(Clone)]
 pub struct CourseComponent {
     title: String,
     courses: Vec<Course>,
     uoc: u8,
-    note: String
+    note: String,
 }
 
 impl CourseComponent {
@@ -283,7 +371,7 @@ impl CourseComponent {
             title,
             courses,
             uoc,
-            note
+            note,
         }
     }
 
@@ -302,24 +390,27 @@ impl CourseComponent {
     pub fn note(&self) -> &str {
         &self.note
     }
+    
 }
-
-
 
 
 #[derive(Clone)]
 pub struct SpecialisationView {
-    specialisations : Vec<String>,
+    specialisations: Vec<String>,
     notes: String,
-    is_optional: bool
+    is_optional: bool,
 }
 
 impl SpecialisationView {
-    fn new(specialisations: Vec<String>, notes: String, is_optional: bool) -> Self{
-        Self { specialisations, notes, is_optional }
+    fn new(specialisations: Vec<String>, notes: String, is_optional: bool) -> Self {
+        Self {
+            specialisations,
+            notes,
+            is_optional,
+        }
     }
 
-    pub fn specialiastions(&self) ->&Vec<String> {
+    pub fn specialiastions(&self) -> &Vec<String> {
         &self.specialisations
     }
 
@@ -339,10 +430,17 @@ pub struct SpecialisationComponent {
     honours: Option<HashMap<String, SpecialisationView>>,
 }
 
-
 impl SpecialisationComponent {
-    fn new(major: Option<HashMap<String, SpecialisationView>>, minor: Option<HashMap<String, SpecialisationView>>, honours: Option<HashMap<String, SpecialisationView>>) -> Self {
-        Self { major, minor, honours }
+    fn new(
+        major: Option<HashMap<String, SpecialisationView>>,
+        minor: Option<HashMap<String, SpecialisationView>>,
+        honours: Option<HashMap<String, SpecialisationView>>,
+    ) -> Self {
+        Self {
+            major,
+            minor,
+            honours,
+        }
     }
 
     pub fn major(&self) -> Option<&HashMap<String, SpecialisationView>> {
@@ -356,26 +454,25 @@ impl SpecialisationComponent {
     pub fn honours(&self) -> Option<&HashMap<String, SpecialisationView>> {
         self.honours.as_ref()
     }
-
 }
 
 #[derive(Clone)]
 pub enum Rules {
     Info(InfoRule),
-    Limit(InfoRule)
+    Limit(InfoRule),
 }
 impl Rules {
     pub fn title(&self) -> &str {
         match self {
             Rules::Info(i) => i.title(),
-            Rules::Limit(l) => l.title()
+            Rules::Limit(l) => l.title(),
         }
     }
 
     pub fn body(&self) -> &str {
         match self {
             Rules::Info(i) => i.body(),
-            Rules::Limit(l) => l.body()
+            Rules::Limit(l) => l.body(),
         }
     }
 }
@@ -383,12 +480,12 @@ impl Rules {
 #[derive(Clone)]
 pub struct InfoRule {
     title: String,
-    body: String
+    body: String,
 }
 
 impl InfoRule {
     fn new(title: String, body: String) -> Self {
-        Self {title, body}
+        Self { title, body }
     }
 
     pub fn title(&self) -> &str {
@@ -398,38 +495,47 @@ impl InfoRule {
     pub fn body(&self) -> &str {
         &self.body
     }
-
 }
-
 
 pub struct ProgramManager {
     programs: HashMap<String, Program>,
-    specialiastions: HashMap<String, Specialisation>
-    
+    specialiastions: HashMap<String, Specialisation>,
 }
 
 impl ProgramManager {
     pub fn new(program_json: &str, specialiastions: &str) -> Self {
         Self {
             programs: ProgramManager::parse_from_program_json(program_json),
-            specialiastions: ProgramManager::parse_from_specialisation_json(specialiastions)
+            specialiastions: ProgramManager::parse_from_specialisation_json(specialiastions),
         }
     }
 
     fn parse_from_program_json(json_path: &str) -> HashMap<String, Program> {
         let json = fs::read_to_string(json_path).expect("Unable to read program json file");
         let json_programs: HashMap<String, Value> = serde_json::from_str(&json).unwrap();
-        json_programs.into_par_iter().map(|(program_code, json_value)| {
-            (program_code, Program::new_from_json(json_value.as_object().unwrap()))
-        }).collect()
+        json_programs
+            .into_par_iter()
+            .map(|(program_code, json_value)| {
+                (
+                    program_code,
+                    Program::new_from_json(json_value.as_object().unwrap()),
+                )
+            })
+            .collect()
     }
 
     fn parse_from_specialisation_json(json_path: &str) -> HashMap<String, Specialisation> {
         let json = fs::read_to_string(json_path).expect("Unable to read specialisation json file");
         let json_specialisation: HashMap<String, Value> = serde_json::from_str(&json).unwrap();
-        json_specialisation.into_par_iter().map(|(program_code, json_value)| {
-            (program_code, Specialisation::new_from_json(json_value.as_object().unwrap()))
-        }).collect()
+        json_specialisation
+            .into_par_iter()
+            .map(|(program_code, json_value)| {
+                (
+                    program_code,
+                    Specialisation::new_from_json(json_value.as_object().unwrap()),
+                )
+            })
+            .collect()
     }
 
     pub fn programs(&self) -> &HashMap<String, Program> {
@@ -455,21 +561,13 @@ impl ProgramManager {
             Err(String::from(format!("{} cannot found in dataset", &code)))
         }
     }
-
-    
-
-
 }
 
-pub struct ProgramComponentBuilder {
-    
-}  
+pub struct ProgramComponentBuilder {}
 
-pub trait Builder <Output>{
+pub trait Builder<Output> {
     fn build(json: &serde_json::Map<String, Value>) -> Option<Output>;
 }
-
-
 
 impl Builder<CourseComponent> for ProgramComponentBuilder {
     fn build(json: &serde_json::Map<String, Value>) -> Option<CourseComponent> {
@@ -479,10 +577,10 @@ impl Builder<CourseComponent> for ProgramComponentBuilder {
             courses_buf.push(Course::new(&each));
         });
         Some(CourseComponent::new(
-            json.get("title")?.as_str()?.to_string(), 
-            courses_buf, 
-            json.get("credits_to_complete")?.as_i64()? as u8, 
-            json.get("notes")?.as_str()?.to_string()
+            json.get("title")?.as_str()?.to_string(),
+            courses_buf,
+            json.get("credits_to_complete")?.as_i64()? as u8,
+            json.get("notes")?.as_str()?.to_string(),
         ))
     }
 }
@@ -499,16 +597,27 @@ impl Builder<SpecialisationComponent> for ProgramComponentBuilder {
                 let direction = key.clone();
                 let object = value.as_object().unwrap();
                 let mut specialisations = Vec::new();
-                object.get("specs").unwrap().as_object().unwrap().keys().for_each(|key| specialisations.push(key.clone()));
+                object
+                    .get("specs")
+                    .unwrap()
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .for_each(|key| specialisations.push(key.clone()));
                 let notes = object.get("notes").unwrap().as_str().unwrap().to_string();
                 let is_optional = object.get("is_optional").unwrap().as_bool().unwrap();
-                buf.insert(direction, SpecialisationView::new(specialisations, notes, is_optional));
-
+                buf.insert(
+                    direction,
+                    SpecialisationView::new(specialisations, notes, is_optional),
+                );
             });
             Some(buf)
-            
         }
-        Some(SpecialisationComponent::new(build_view(major), build_view(minor), build_view(honours)))
+        Some(SpecialisationComponent::new(
+            build_view(major),
+            build_view(minor),
+            build_view(honours),
+        ))
     }
 }
 
@@ -519,18 +628,27 @@ impl Builder<Rules> for ProgramComponentBuilder {
             "info_rule" => {
                 let title = json.get("title")?.as_str()?;
                 let notes = json.get("notes")?.as_str()?;
-                Some(Rules::Info(InfoRule::new(title.to_string(), notes.to_string())))
-            },
+                Some(Rules::Info(InfoRule::new(
+                    title.to_string(),
+                    notes.to_string(),
+                )))
+            }
             "limit_rule" => {
                 let title = json.get("title")?.as_str()?;
                 let notes = json.get("notes")?.as_str()?;
-                let course_msgs = json.get("courses")?.as_object()?.values().map(|value| value.as_str().unwrap().to_string()).collect::<Vec<String>>().join("\n- ");
+                let course_msgs = json
+                    .get("courses")?
+                    .as_object()?
+                    .values()
+                    .map(|value| value.as_str().unwrap().to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n- ");
                 let mut buf = notes.to_string();
                 buf.push('\n');
                 buf.push_str(&course_msgs);
                 Some(Rules::Limit(InfoRule::new(title.to_string(), buf)))
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 }
@@ -541,17 +659,23 @@ mod tests {
 
     #[test]
     fn test_read_json() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
         assert_ne!(api.programs.len(), 0);
-        assert_ne!(api.specialiastions.len(), 0);                     
+        assert_ne!(api.specialiastions.len(), 0);
     }
 
     #[test]
     fn test_get_program() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
-        let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let program = api
+            .get_program(&ProgramCode::from_str("3784").unwrap())
+            .unwrap();
         assert_eq!(program.title, "Commerce / Computer Science");
         assert_eq!(program.code(), "3784");
         assert_eq!(program.uoc, 192);
@@ -566,54 +690,92 @@ mod tests {
 
     #[test]
     fn test_get_specialisation() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
         let specialisation = api.get_specialiastion("COMPA1").unwrap();
         assert_eq!(specialisation.name, "Computer Science");
         assert_eq!(specialisation.code(), "COMPA1");
         assert_eq!(specialisation.uoc, 96);
         assert!(specialisation.constraints.is_none());
         assert_eq!(specialisation.course_component().len(), 2)
-    }   
+    }
 
     #[test]
     fn test_program_coursecomponent() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
-        let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let program = api
+            .get_program(&ProgramCode::from_str("3784").unwrap())
+            .unwrap();
         let course_components = program.course_components.as_ref().unwrap();
         assert_eq!(course_components.len(), 4);
-        assert_eq!(course_components.get("Final Year Synthesis").unwrap().courses.len(), 12);
-        assert!(course_components.get("Final Year Synthesis").unwrap().courses.contains(&Course::Course(CourseCode::from_str("ACCT3583").unwrap())));
+        assert_eq!(
+            course_components
+                .get("Final Year Synthesis")
+                .unwrap()
+                .courses
+                .len(),
+            12
+        );
+        assert!(course_components
+            .get("Final Year Synthesis")
+            .unwrap()
+            .courses
+            .contains(&Course::Course(CourseCode::from_str("ACCT3583").unwrap())));
     }
 
     #[test]
     fn test_program_rules() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
-        let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let program = api
+            .get_program(&ProgramCode::from_str("3784").unwrap())
+            .unwrap();
         let rules = program.rules.clone();
         assert_eq!(rules.len(), 4);
     }
 
     #[test]
     fn test_major() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
-        let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let program = api
+            .get_program(&ProgramCode::from_str("3784").unwrap())
+            .unwrap();
         let specialisation = program.specialisation_component.as_ref().unwrap();
-        let specialisation_view = specialisation.major.as_ref().unwrap().get("Computer Science").unwrap();
+        let specialisation_view = specialisation
+            .major
+            .as_ref()
+            .unwrap()
+            .get("Computer Science")
+            .unwrap();
         assert_eq!(specialisation_view.specialisations.len(), 8);
     }
 
     #[test]
     fn test_minor() {
-        let api = ProgramManager::new("/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json", 
-                                    "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json");
-        let program = api.get_program(&ProgramCode::from_str("3784").unwrap()).unwrap();
+        let api = ProgramManager::new(
+            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let program = api
+            .get_program(&ProgramCode::from_str("3784").unwrap())
+            .unwrap();
         let specialisation = program.specialisation_component.as_ref().unwrap();
-        let specialisation_view = specialisation.minor.as_ref().unwrap().get("Commerce").unwrap();
+        let specialisation_view = specialisation
+            .minor
+            .as_ref()
+            .unwrap()
+            .get("Commerce")
+            .unwrap();
         assert_eq!(specialisation_view.specialisations.len(), 14);
     }
-
 }
