@@ -191,17 +191,6 @@ impl Specialisation {
                 Constraints::new(title, description)
             })
             .collect();
-        let programs = json
-            .get("programs")
-            .unwrap()
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|object| {
-                let program_code = object.as_str().unwrap();
-                ProgramCode::from_str(program_code).unwrap()
-            })
-            .collect();
         let spec_type = match json.get("type").unwrap().as_str().unwrap() {
             "major" => SpecialisationType::Major,
             "minor" => SpecialisationType::Minor,
@@ -219,7 +208,7 @@ impl Specialisation {
             } else {
                 Some(constraints)
             },
-            programs,
+            programs: Vec::new(),
         }
     }
 
@@ -268,7 +257,7 @@ impl Constraints {
         &self.description
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Course {
     Course(CourseCode),
     Alternative(AlternativeCourse),
@@ -286,6 +275,14 @@ impl Course {
     }
 
     pub fn to_course_codes(&self) -> Vec<CourseCode> {
+        match self {
+            Course::Course(c) => vec![c.clone()],
+            Course::Alternative(ac) => ac.courses.clone(),
+            Course::Text(_) => Vec::new(),
+        }
+    }
+
+    pub fn flatten(&self) -> Vec<CourseCode> {
         match self {
             Course::Course(c) => vec![c.clone()],
             Course::Alternative(ac) => ac.courses.clone(),
@@ -322,7 +319,7 @@ impl Eq for Course {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AlternativeCourse {
     courses: Vec<CourseCode>,
 }
@@ -346,6 +343,9 @@ impl AlternativeCourse {
 
     fn from_str(courses: &str) -> Option<Self> {
         let mut buf = Vec::new();
+        if !courses.contains("or") {
+            return None;
+        }
         for course in courses.split("or") {
             if let Some(course_code) = CourseCode::parse(course.trim()) {
                 buf.push(course_code);
@@ -504,10 +504,46 @@ pub struct ProgramManager {
 
 impl ProgramManager {
     pub fn new(program_json: &str, specialiastions: &str) -> Self {
-        Self {
+        let mut manager = Self {
             programs: ProgramManager::parse_from_program_json(program_json),
             specialiastions: ProgramManager::parse_from_specialisation_json(specialiastions),
-        }
+        };
+        manager.mapping_program_into_specialisation();
+        manager
+    }
+
+    fn mapping_program_into_specialisation(&mut self) {
+        self.programs.iter().for_each(|(_, program)| {
+            if let Some(specialisation_component) = program.specialisation_component.as_ref() {
+                if let Some(major) = specialisation_component.major.as_ref() {
+                    major.iter().for_each(|(major_name, major_view)| {
+                        major_view.specialisations.iter().for_each(|spec_code| {
+                            if let Some(specialisation) = self.specialiastions.get_mut(spec_code) {
+                                specialisation.programs.push(program.code.clone());
+                            }
+                        });
+                    });
+                }
+                if let Some(minor) = specialisation_component.minor.as_ref() {
+                    minor.iter().for_each(|(minor_name, minor_view)| {
+                        minor_view.specialisations.iter().for_each(|spec_code| {
+                            if let Some(specialisation) = self.specialiastions.get_mut(spec_code) {
+                                specialisation.programs.push(program.code.clone());
+                            }
+                        });
+                    });
+                }
+                if let Some(honours) = specialisation_component.honours.as_ref() {
+                    honours.iter().for_each(|(honours_name, honours_view)| {
+                        honours_view.specialisations.iter().for_each(|spec_code| {
+                            if let Some(specialisation) = self.specialiastions.get_mut(spec_code) {
+                                specialisation.programs.push(program.code.clone());
+                            }
+                        });
+                    });
+                }
+            }
+        });
     }
 
     fn parse_from_program_json(json_path: &str) -> HashMap<String, Program> {
@@ -660,8 +696,8 @@ mod tests {
     #[test]
     fn test_read_json() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         assert_ne!(api.programs.len(), 0);
         assert_ne!(api.specialiastions.len(), 0);
@@ -670,8 +706,8 @@ mod tests {
     #[test]
     fn test_get_program() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         let program = api
             .get_program(&ProgramCode::from_str("3784").unwrap())
@@ -691,8 +727,8 @@ mod tests {
     #[test]
     fn test_get_specialisation() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         let specialisation = api.get_specialiastion("COMPA1").unwrap();
         assert_eq!(specialisation.name, "Computer Science");
@@ -705,8 +741,8 @@ mod tests {
     #[test]
     fn test_program_coursecomponent() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         let program = api
             .get_program(&ProgramCode::from_str("3784").unwrap())
@@ -731,8 +767,8 @@ mod tests {
     #[test]
     fn test_program_rules() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         let program = api
             .get_program(&ProgramCode::from_str("3784").unwrap())
@@ -744,8 +780,8 @@ mod tests {
     #[test]
     fn test_major() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         let program = api
             .get_program(&ProgramCode::from_str("3784").unwrap())
@@ -763,8 +799,8 @@ mod tests {
     #[test]
     fn test_minor() {
         let api = ProgramManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/programsProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
         );
         let program = api
             .get_program(&ProgramCode::from_str("3784").unwrap())

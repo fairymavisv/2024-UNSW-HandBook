@@ -312,9 +312,11 @@ mod tests {
     #[test]
     fn test_read_json() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            // /root/UNSW-HandBookX/backend/src/data/loader/src/program.rs
+            // /root/UNSW-HandBookX/backend/src/data/loader/src/course.rs
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         assert_ne!(api.courses.len(), 0);
         assert_ne!(api.equivalent_courses.len(), 0);
@@ -324,9 +326,9 @@ mod tests {
     #[test]
     fn test_get_course() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("COMP1511")).unwrap();
         assert_eq!(course.code(), String::from("COMP1511"));
@@ -348,9 +350,9 @@ mod tests {
     #[test]
     fn test_get_eqv() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         assert!(api
             .equivalent_courses
@@ -365,9 +367,9 @@ mod tests {
     #[test]
     fn test_get_excl() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         assert!(api
             .exclusion_courses
@@ -379,9 +381,9 @@ mod tests {
     #[test]
     fn test_course_empty_requirement() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("COMP1511")).unwrap();
         assert!(course
@@ -397,9 +399,9 @@ mod tests {
     #[test]
     fn test_course_requriements_course() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("COMP3153")).unwrap();
         assert!(course
@@ -415,9 +417,9 @@ mod tests {
     #[test]
     fn test_course_requriements_program() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("COMP4961")).unwrap();
         assert!(!course
@@ -430,7 +432,7 @@ mod tests {
             .unwrap());
         assert!(course
             .is_eligable(
-                &ProgramCode::from_str("4545").unwrap(),
+                &ProgramCode::from_str("4515").unwrap(),
                 &vec![],
                 &None,
                 &api
@@ -449,9 +451,9 @@ mod tests {
     #[test]
     fn test_course_requriements_wam() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("BLDG4018")).unwrap();
         assert!(course
@@ -475,9 +477,9 @@ mod tests {
     #[test]
     fn test_course_requriements_uoc() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("BLDG4018")).unwrap();
         assert!(course
@@ -493,9 +495,9 @@ mod tests {
     #[test]
     fn test_course_requriements_binary() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("COMP2511")).unwrap();
         assert!(course
@@ -519,9 +521,9 @@ mod tests {
     #[test]
     fn test_course_requriements_list() {
         let api = CourseManager::new(
-            "/home/shilong/UNSW-HandBookX/backend/data/coursesProcessed.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/equivalents.json",
-            "/home/shilong/UNSW-HandBookX/backend/data/exclusions.json",
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
         );
         let course = api.get_course(&CourseCode::from("COMP4141")).unwrap();
         assert!(course
