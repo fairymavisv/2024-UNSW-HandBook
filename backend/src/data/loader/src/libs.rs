@@ -11,9 +11,14 @@ mod utlis;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 // use serde_wasm_bindgen;
-use std::{rc::Rc, sync::{RwLock, Arc}, collections::HashMap, path::Component};
 use course::CourseManager;
-use program::{ProgramManager, Program};
+use program::{Program, ProgramManager};
+use std::{
+    collections::HashMap,
+    path::Component,
+    rc::Rc,
+    sync::{Arc, RwLock},
+};
 use wasm_bindgen::prelude::*;
 // use tokio::
 use crate::utlis::{CourseCode, ProgramCode};
@@ -77,7 +82,10 @@ pub struct JsProgramStructure {
     specialisation_list: Vec<(String, Vec<String>)>,
 }
 impl JsProgramStructure {
-    pub fn new(course_list: Vec<(String, Vec<String>)>, specialisation_list: Vec<(String, Vec<String>)>) -> Self {
+    pub fn new(
+        course_list: Vec<(String, Vec<String>)>,
+        specialisation_list: Vec<(String, Vec<String>)>,
+    ) -> Self {
         JsProgramStructure {
             course_list,
             specialisation_list,
@@ -90,12 +98,23 @@ impl JsProgramStructure {
         }
     }
     pub fn from_struture(structure: Vec<(String, Vec<String>)>) -> Self {
-        let course_list: Vec<(String, Vec<String>)> = structure.iter().filter(|(name, _)| {
-            !(name.starts_with("Major -") || name.starts_with("Minor -") || name.starts_with("Honours -"))
-        }).map(|entry| entry.clone()).collect();
-        let specialisation_list: Vec<(String, Vec<String>)> = structure.into_iter().filter(|(name, _)| {
-            (name.starts_with("Major -") || name.starts_with("Minor -") || name.starts_with("Honours -"))
-        }).collect();
+        let course_list: Vec<(String, Vec<String>)> = structure
+            .iter()
+            .filter(|(name, _)| {
+                !(name.starts_with("Major -")
+                    || name.starts_with("Minor -")
+                    || name.starts_with("Honours -"))
+            })
+            .map(|entry| entry.clone())
+            .collect();
+        let specialisation_list: Vec<(String, Vec<String>)> = structure
+            .into_iter()
+            .filter(|(name, _)| {
+                (name.starts_with("Major -")
+                    || name.starts_with("Minor -")
+                    || name.starts_with("Honours -"))
+            })
+            .collect();
         JsProgramStructure {
             course_list: course_list,
             specialisation_list: specialisation_list,
@@ -136,11 +155,10 @@ impl JsProgramInfo {
             uoc: program.uoc().to_string(),
             overview: program.overview().to_string(),
             structure_summary: program.structure_summary().to_string(),
-            structure: JsProgramStructure::empty()
+            structure: JsProgramStructure::empty(),
         }
     }
 }
-
 
 impl From<course::Course> for JsCourseInfo {
     fn from(course: course::Course) -> Self {
@@ -153,10 +171,13 @@ impl From<course::Course> for JsCourseInfo {
                 Some(requirements) => requirements.to_string(),
                 None => "Please Report Bug: Course condition parsing error".to_string(),
             },
-            offerings: course.offering_terms().iter().map(|offering| offering.to_string()).collect(),
+            offerings: course
+                .offering_terms()
+                .iter()
+                .map(|offering| offering.to_string())
+                .collect(),
         }
     }
-    
 }
 
 #[wasm_bindgen]
@@ -182,7 +203,10 @@ impl HandbookDataInterface {
         let course = courses.get_course(&CourseCode::from_str(code)?);
         match course {
             Ok(course) => Some(JsCourseInfo::from(course.clone())),
-            Err(err) => {println!("{}", err); None},
+            Err(err) => {
+                println!("{}", err);
+                None
+            }
         }
     }
 
@@ -192,27 +216,40 @@ impl HandbookDataInterface {
         let program = programs.get_program(&program_code);
         match program {
             Ok(program) => {
-                let structure = programs.get_program_structure(&program_code, false, None).unwrap_or(Vec::new());
+                let structure = programs
+                    .get_program_structure(&program_code, false, None)
+                    .unwrap_or(Vec::new());
                 let mut program = JsProgramInfo::from(program);
                 program.structure = JsProgramStructure::from_struture(structure);
                 Some(program)
-            },
-            Err(err) => {println!("{}", err); None},
+            }
+            Err(err) => {
+                println!("{}", err);
+                None
+            }
         }
     }
-    pub fn get_program_and_spec_info(&self, code: &str, spec: Option<Vec<String>>) -> Option<JsProgramInfo> {
+    pub fn get_program_and_spec_info(
+        &self,
+        code: &str,
+        spec: Option<Vec<String>>,
+    ) -> Option<JsProgramInfo> {
         let programs = self.programs.read().unwrap();
         let program_code = ProgramCode::from_str(code)?;
         let program = programs.get_program(&program_code);
         match program {
             Ok(program) => {
-                let structure = programs.get_program_structure(&program_code, true, spec.as_ref()).unwrap_or(Vec::new());
+                let structure = programs
+                    .get_program_structure(&program_code, true, spec.as_ref())
+                    .unwrap_or(Vec::new());
                 let mut program = JsProgramInfo::from(program);
-                program.structure = JsProgramStructure::from_struture(structure);;
+                program.structure = JsProgramStructure::from_struture(structure);
                 Some(program)
-            },
-            Err(err) => {println!("{}", err); None},
+            }
+            Err(err) => {
+                println!("{}", err);
+                None
+            }
         }
     }
-
 }

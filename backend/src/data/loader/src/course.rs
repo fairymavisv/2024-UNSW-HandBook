@@ -140,7 +140,6 @@ impl Course {
     pub fn requirements(&self) -> Option<Arc<Requirements>> {
         self.requirements.as_ref().map(|x| x.clone())
     }
-
 }
 
 pub struct CourseManager {
@@ -279,7 +278,7 @@ impl CourseManager {
     }
 
     pub fn get_course(&self, course_code: &CourseCode) -> Result<&Course, String> {
-        if !course_code.is_specific_course() {
+        if !course_code.is_course_code() {
             return Err(String::from(format!(
                 "Expect a specific course code, rather than {}",
                 &course_code

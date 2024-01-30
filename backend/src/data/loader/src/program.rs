@@ -390,9 +390,7 @@ impl CourseComponent {
     pub fn note(&self) -> &str {
         &self.note
     }
-    
 }
-
 
 #[derive(Clone)]
 pub struct SpecialisationView {

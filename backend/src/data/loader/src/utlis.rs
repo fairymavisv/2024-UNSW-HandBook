@@ -54,8 +54,8 @@ impl ProgramCode {
 pub struct CourseCode {
     school_code: [char; 4],
     course_code: [char; 4],
-    any_school: bool,
-    any_level: bool,
+    num_of_match_school: u8,
+    num_of_match_code: u8,
 }
 
 impl Display for CourseCode {
@@ -96,8 +96,8 @@ impl CourseCode {
         CourseCode {
             school_code,
             course_code,
-            any_school: false,
-            any_level: false,
+            num_of_match_school: 4,
+            num_of_match_code: 4,
         }
     }
     fn from_str_unsafe(s: &str) -> Self {
@@ -105,36 +105,44 @@ impl CourseCode {
     }
 
     pub fn new_school_with_level(school_code: [char; 4], level: u8) -> CourseCode {
-        let mut course_code: [char; 4] = ['_'; 4];
+        let mut course_code: [char; 4] = ['#'; 4];
         course_code[0] = char::from_u32(level as u32).unwrap();
         CourseCode {
             school_code,
             course_code,
-            any_school: false,
-            any_level: false,
+            num_of_match_school: 4,
+            num_of_match_code: 1,
         }
     }
 
     pub fn new_any_school(school_code: [char; 4]) -> CourseCode {
-        let mut course_code: [char; 4] = ['0'; 4];
+        let mut course_code: [char; 4] = ['#'; 4];
         CourseCode {
             school_code,
             course_code,
-            any_school: false,
-            any_level: true,
+            num_of_match_school: 4,
+            num_of_match_code: 0,
         }
     }
 
     pub fn new_any_school_with_level(level: u8) -> CourseCode {
         let school_code: [char; 4] = ['.'; 4];
-        let mut course_code: [char; 4] = ['0'; 4];
+        let mut course_code: [char; 4] = ['#'; 4];
         course_code[0] = char::from_u32(level as u32).unwrap();
         CourseCode {
             school_code,
             course_code,
-            any_school: true,
-            any_level: false,
+            num_of_match_school: 0,
+            num_of_match_code: 1,
         }
+    }
+
+    pub fn is_pattern(&self) -> bool {
+        self.num_of_match_school != 4 || self.num_of_match_code != 4
+    }
+
+    pub fn is_course_code(&self) -> bool {
+        self.num_of_match_school == 4 && self.num_of_match_code == 4
     }
 
     pub fn parse(s: &str) -> Option<CourseCode> {
@@ -142,36 +150,29 @@ impl CourseCode {
             return CourseCode::from_str(s);
         }
         let mut school_code: [char; 4] = ['.'; 4];
-        let mut course_code: [char; 4] = ['0'; 4];
-        let mut is_any_school = false;
-        let mut num_code = 0;
+        let mut course_code: [char; 4] = ['#'; 4];
+        let mut num_of_match_school = 0;
+        let mut num_of_match_code = 0;
         for (i, c) in s.chars().enumerate() {
             if i < 4 {
-                if c == '.' {
-                    is_any_school = true;
-                }
                 if c.is_ascii_alphabetic() {
                     school_code[i] = c;
-                } else {
-                    return None;
+                    num_of_match_school += 1;
                 }
             } else {
                 if !c.is_numeric() {
                     return None;
                 }
                 course_code[i - 4] = c;
-                num_code += 1;
+                num_of_match_code += 1;
             }
         }
-        let given_code = num_code == 1;
         Some(CourseCode {
             school_code,
             course_code,
-            any_school: is_any_school,
-            any_level: !given_code,
+            num_of_match_school,
+            num_of_match_code,
         })
-        //
-        // todo!()
     }
 
     pub fn from_str(s: &str) -> Option<CourseCode> {
@@ -205,10 +206,6 @@ impl CourseCode {
     pub fn level(&self) -> u8 {
         self.course_code[0].to_digit(10).unwrap() as u8
     }
-
-    pub fn is_specific_course(&self) -> bool {
-        !(self.any_level || self.any_school)
-    }
 }
 
 impl From<&str> for CourseCode {
@@ -219,20 +216,17 @@ impl From<&str> for CourseCode {
 
 impl PartialEq for CourseCode {
     fn eq(&self, other: &Self) -> bool {
-        match (
-            (self.any_school, self.any_level),
-            (other.any_school, other.any_level),
-        ) {
-            ((true, true), _) => true,
-            ((true, false), (true, false)) | ((true, false), (false, false)) => {
-                self.level() == self.level()
-            }
-            ((true, false), (false, true)) => false,
-            ((true, false), (true, true)) => true,
-            ((false, _), (true, _)) => other.eq(self),
-            ((false, false), (false, false)) => self.to_string().eq(&other.to_string()),
-            _ => self.to_string().eq(&other.to_string()),
-        }
+        self.school_code
+            .iter()
+            .zip(other.school_code.iter())
+            .take(self.num_of_match_school as usize)
+            .all(|(a, b)| a == b)
+            && self
+                .course_code
+                .iter()
+                .zip(other.course_code.iter())
+                .take(self.num_of_match_code as usize)
+                .all(|(a, b)| a == b)
     }
 }
 
