@@ -1,7 +1,9 @@
 import {Controller, Get, Post, HttpException, HttpStatus, Param, Put, Query, Body, Delete} from '@nestjs/common';
 import {CourseService } from './course.service';
 import {ApiOperation, ApiResponse} from "@nestjs/swagger";
-import {DeleteCommentDto, CourseDto, CreateCommentDto, } from "./course.dto";
+import {DeleteCommentDto,CourseInfoDto, CreateCommentReturnDto,CreateCommentDto, recommendCourseReturnDto} from "./course.dto";
+
+
 
 
 @Controller('course')
@@ -15,7 +17,7 @@ export class CourseController {
     @ApiResponse({
         status: 200,
         description: 'The Course details',
-        type: CourseDto,
+        type: CourseInfoDto,
     })
     async getCourseInfo(@Param('CourseCode') CourseCode: string) {
         try {
@@ -23,7 +25,7 @@ export class CourseController {
             const upperCaseCode = CourseCode.toUpperCase();
             const CourseInfo = await this.programService.getCourseInfo(upperCaseCode);
             if (!CourseInfo) {
-                throw new HttpException('Program not found', HttpStatus.NOT_FOUND);
+                throw new HttpException('course not found', HttpStatus.NOT_FOUND);
             }
             return CourseInfo;
         } catch (error) {
@@ -37,7 +39,7 @@ export class CourseController {
     @ApiResponse({
         status: 200,
         description: 'The Course details',
-        type: CreateCommentDto, // 指定返回的类型是 UserDto
+        type: CreateCommentReturnDto, // 指定返回的类型是 UserDto
     })
     async createCourseComment(@Body() createCommentDto: CreateCommentDto) {
         try {
@@ -63,6 +65,26 @@ export class CourseController {
             const ret = await this.programService.deleteCourseComment(deleteCommentDto);
             if (!ret) {
                 throw new HttpException('delete comment failed', HttpStatus.NOT_FOUND);
+            }
+            return ret;
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get("static/getRecommendCourse")
+    @ApiOperation({ summary: 'get top 5 recommend Course' })
+    @ApiResponse({ status: 404, description: 'Course code not found' })
+    @ApiResponse({
+        status: 200,
+        description: 'The Course details',
+        type: [recommendCourseReturnDto]
+    })
+    async getRecommendCourse(){
+        try {
+            const ret = await this.programService.getRecommendCourse();
+            if (!ret) {
+                throw new HttpException('get recommend Course failed', HttpStatus.NOT_FOUND);
             }
             return ret;
         } catch (error) {

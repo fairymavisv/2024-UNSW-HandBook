@@ -42,15 +42,14 @@ export class UserController {
     }
 
     // get user courses list
-    @Get(':username/courseslist')
-    @ApiResponse({ status: 404, description: 'user not found' })
+    @Get('courselist')
     @ApiResponse({
         status: 200,
         description: 'The user details',
         type: String,
         isArray: true // 明确指出返回的是字符串数组
     })
-    async getUserCourses(@Param('token') token: string, @Body() courseIds: string[]){
+    async getUserCourses(@Query('token') token: string){
         try {
             const updatedUser = await this.userService.getUserCourses(token);
             return updatedUser;
@@ -59,8 +58,8 @@ export class UserController {
         }
     }
 
-    // add user courses list
-    @Post(':username/courseslist')
+    //增加或删除课程
+    @Put('courselist')
     @ApiResponse({ status: 404, description: 'user not found' })
     @ApiResponse({
         status: 200,
@@ -68,27 +67,10 @@ export class UserController {
         type: String,
         isArray: true
     })
-    async addUserCourses(@Param('token') token: string, @Body() courseIds: string[]): Promise<User> {
+    async updateUserCourse(@Query('token') token: string, @Body() courseIds: string[]){
         try {
-            const updatedUser = await this.userService.addUserCourses(token, courseIds);
-            return updatedUser;
-        } catch (error) {
-            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-        }
-    }
-    // update user courses list
-    @Put(':username/courseslist')
-    @ApiResponse({ status: 404, description: 'user not found' })
-    @ApiResponse({
-        status: 200,
-        description: 'The user details',
-        type: String,
-        isArray: true
-    })
-    async updateUserCourse(@Param('token') token: string, @Body() courseIds: string[]): Promise<User> {
-        try {
-            const updatedUser = await this.userService.updateUserCourse(token, courseIds);
-            return updatedUser;
+            const updatedUserCourseList = await this.userService.updateUserCourse(token, courseIds);
+            return updatedUserCourseList;
         } catch (error) {
             throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }

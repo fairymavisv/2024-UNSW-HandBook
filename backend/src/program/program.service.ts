@@ -9,8 +9,6 @@ export class ProgramService {
     // private programs: { [key: string]: Program };
 
     constructor() {
-        // const jsonPath = path.join(__dirname, '..', '..', 'data', 'programs.json');
-        // this.programs = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
     }
 
