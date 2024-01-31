@@ -282,13 +282,7 @@ impl Course {
         }
     }
 
-    pub fn flatten(&self) -> Vec<CourseCode> {
-        match self {
-            Course::Course(c) => vec![c.clone()],
-            Course::Alternative(ac) => ac.courses.clone(),
-            Course::Text(_) => Vec::new(),
-        }
-    }
+    
 }
 
 impl PartialEq for Course {

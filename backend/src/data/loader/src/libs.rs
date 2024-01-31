@@ -8,6 +8,7 @@ mod program;
 mod requirements;
 mod search;
 mod utlis;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 // use serde_wasm_bindgen;
@@ -22,6 +23,7 @@ use std::{
 use wasm_bindgen::prelude::*;
 // use tokio::
 use crate::utlis::{CourseCode, ProgramCode};
+pub use wasm_bindgen_rayon::init_thread_pool;
 
 #[wasm_bindgen]
 pub fn test_io(input: &str) -> String {
@@ -252,4 +254,23 @@ impl HandbookDataInterface {
             }
         }
     }
+
+    pub fn list_program_all_coursecodes(&self, program_code: &str) -> Option<Vec<String>> {
+        let courses = self.courses.read().ok()?;
+        let programs = self.programs.read().ok()?;
+        let program_code = ProgramCode::from_str(program_code)?;
+        let pool = programs.get_course_pool(&program_code).ok()?;
+        let result: Vec<String> = courses.list_courses_from_pool(&pool).into_par_iter().map(|course| course.code()).collect();
+        Some(result)
+    }
+
+    pub fn list_eligable_courses(&self, program_code: &str, taken_course: Vec<String>, wam: Option<u8>) -> Option<Vec<String>> {
+        let courses = self.courses.read().ok()?;
+        let programs = self.programs.read().ok()?;
+        let program_code = ProgramCode::from_str(program_code)?;
+        let pool = programs.get_course_pool(&program_code).ok()?;
+        let result: Vec<String> = courses.list_eligable_courses(&pool, &program_code, &taken_course, &wam).into_par_iter().map(|course| course.code()).collect();
+        Some(result)
+    }
+
 }

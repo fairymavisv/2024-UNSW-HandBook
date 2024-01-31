@@ -1,3 +1,4 @@
+use core::num;
 use std::{
     fmt::{Debug, Display, Formatter},
     hash::Hash,
@@ -180,7 +181,7 @@ impl CourseCode {
             return None;
         }
         let mut school_code: [char; 4] = ['.'; 4];
-        let mut course_code: [char; 4] = ['0'; 4];
+        let mut course_code: [char; 4] = ['#'; 4];
         for (i, c) in s.chars().enumerate() {
             if i < 4 {
                 school_code[i] = c;
@@ -206,6 +207,42 @@ impl CourseCode {
     pub fn level(&self) -> u8 {
         self.course_code[0].to_digit(10).unwrap() as u8
     }
+
+    pub fn adjust_pattern(&mut self, num_of_match_school_code: u8, num_of_match_course_code: u8) {
+        if num_of_match_school_code > 4 || num_of_match_course_code > 4 {
+            return;
+        }
+        if self.num_of_match_code == num_of_match_course_code
+            && self.num_of_match_school == num_of_match_school_code
+        {
+            return;
+        }
+
+        if self.num_of_match_code != num_of_match_course_code {
+            let mut course_code: [char; 4] = ['#'; 4];
+            for (i, c) in self.course_code.iter().enumerate() {
+                if i < num_of_match_course_code as usize {
+                    course_code[i] = *c;
+                }
+            }
+            self.course_code = course_code;
+            self.num_of_match_code = num_of_match_course_code;
+        }
+        if self.num_of_match_school != num_of_match_school_code {
+            let mut school_code: [char; 4] = ['.'; 4];
+            for (i, c) in self.school_code.iter().enumerate() {
+                if i < num_of_match_school_code as usize {
+                    school_code[i] = *c;
+                }
+            }
+            self.school_code = school_code;
+            self.num_of_match_school = num_of_match_school_code;
+        }
+    }
+
+    pub fn is_match(&self, other: &CourseCode) -> bool {
+        self.eq(other)
+    }
 }
 
 impl From<&str> for CourseCode {
@@ -216,6 +253,10 @@ impl From<&str> for CourseCode {
 
 impl PartialEq for CourseCode {
     fn eq(&self, other: &Self) -> bool {
+        if self.num_of_match_school == other.num_of_match_school
+            && self.num_of_match_code == other.num_of_match_code {
+            return self.to_string() == other.to_string();
+        }
         self.school_code
             .iter()
             .zip(other.school_code.iter())

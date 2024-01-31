@@ -4,13 +4,11 @@
   "files": [
     "loader_bg.wasm",
     "loader.js",
-    "loader_bg.js",
     "loader.d.ts"
   ],
   "module": "loader.js",
   "types": "loader.d.ts",
   "sideEffects": [
-    "./loader.js",
     "./snippets/*"
   ]
 }

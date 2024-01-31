@@ -1,12 +1,11 @@
 use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
-    ops::Deref,
+    borrow::BorrowMut, collections::{BTreeMap, BTreeSet, HashSet}, mem::swap, ops::Deref
 };
 
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelExtend, ParallelIterator};
 
 use crate::{
-    course::CourseManager,
+    course::{self, CourseManager},
     program::{Course, Program, ProgramManager, Specialisation},
     utlis::{CourseCode, ProgramCode},
 };
@@ -16,7 +15,7 @@ impl Program {
         let course_components = self.course_component()?;
         // course_components
         let result: Vec<(&str, &Vec<Course>)> = course_components
-            .iter()
+            .par_iter()
             .map(|(key, value)| (value.title(), value.courses()))
             .collect();
         Some(result)
@@ -27,7 +26,7 @@ impl Program {
         let major: Vec<(&str, &Vec<String>)> = if let Some(major) = specialisation_component.major()
         {
             major
-                .iter()
+                .par_iter()
                 .map(|(key, value)| (key.as_ref(), value.specialiastions()))
                 .collect()
         } else {
@@ -36,7 +35,7 @@ impl Program {
         let minor: Vec<(&str, &Vec<String>)> = if let Some(minor) = specialisation_component.minor()
         {
             minor
-                .iter()
+                .par_iter()
                 .map(|(key, value)| (key.as_ref(), value.specialiastions()))
                 .collect()
         } else {
@@ -45,7 +44,7 @@ impl Program {
         let honours: Vec<(&str, &Vec<String>)> =
             if let Some(honours) = specialisation_component.honours() {
                 honours
-                    .iter()
+                    .par_iter()
                     .map(|(key, value)| (key.as_ref(), value.specialiastions()))
                     .collect()
             } else {
@@ -58,7 +57,7 @@ impl Program {
 impl Specialisation {
     pub fn list_courses(&self) -> Vec<(&str, &Vec<Course>)> {
         self.course_component()
-            .iter()
+            .par_iter()
             .map(|(key, value)| (value.title(), value.courses()))
             .collect()
     }
@@ -75,12 +74,12 @@ impl ProgramManager {
         let mut result: Vec<(String, Vec<String>)> = program
             .list_courses()
             .unwrap_or(Vec::new())
-            .iter()
+            .par_iter()
             .map(|(key, value)| {
                 (
                     key.to_string(),
                     value
-                        .iter()
+                        .par_iter()
                         .map(|course| course.to_string())
                         .collect::<Vec<String>>(),
                 )
@@ -112,7 +111,7 @@ impl ProgramManager {
                                                 spec_component_name
                                             ),
                                             courses
-                                                .iter()
+                                                .par_iter()
                                                 .map(|course| course.to_string())
                                                 .collect(),
                                         );
@@ -145,7 +144,7 @@ impl ProgramManager {
                                     spec.name(),
                                     spec_component_name
                                 ),
-                                courses.iter().map(|course| course.to_string()).collect(),
+                                courses.par_iter().map(|course| course.to_string()).collect(),
                             );
                             result.push(each);
                         });
@@ -164,7 +163,7 @@ impl ProgramManager {
                         }
                         let each: (String, Vec<String>) = (
                             format!("{} - {}", name, direction,),
-                            specs.iter().map(|spec| spec.to_string()).collect(),
+                            specs.par_iter().map(|spec| spec.to_string()).collect(),
                         );
                         result.push(each);
                     }
@@ -175,7 +174,7 @@ impl ProgramManager {
             }
         }
     }
-    pub fn list_course_pool(&self, code: &ProgramCode) -> Result<Vec<CourseCode>, String> {
+    pub fn get_course_pool(&self, code: &ProgramCode) -> Result<SearchPool, String> {
         let program = self.get_program(code)?;
         let mut result: HashSet<&Course> = program
             .list_courses()
@@ -203,37 +202,135 @@ impl ProgramManager {
             .map(|course| course.to_course_codes())
             .flatten()
             .collect::<HashSet<CourseCode>>();
-        Ok(result.into_iter().collect())
+
+        Ok(SearchPool::new_from_set(result))
     }
 
     // pub fn
 }
+pub enum SearchPoolLevel {
+    Hybrid,
+    CourseCodeOnly,
+    CoursePatternOnly,
+}
+
+pub struct SearchPool {
+    course_code_pool: Option<HashSet<CourseCode>>,
+    course_pattern_pool: Option<HashSet<CourseCode>>,
+    pool_level: SearchPoolLevel,
+}
+
+impl SearchPool {
+    pub fn new(course_code_pool: HashSet<CourseCode>, course_pattern_pool: HashSet<CourseCode>) -> Self {
+        let course_code_pool_size = course_code_pool.len();
+        let course_pattern_pool_size = course_pattern_pool.len();
+        Self {
+            course_code_pool: match course_code_pool_size {
+                0 => None,
+                _ => Some(course_code_pool),
+            },
+            course_pattern_pool: match course_pattern_pool_size {
+                0 => None,
+                _ => Some(course_pattern_pool),
+            },
+            pool_level: match (course_code_pool_size, course_pattern_pool_size) {
+                (0, 0) => SearchPoolLevel::CourseCodeOnly,
+                (_, 0) => SearchPoolLevel::CourseCodeOnly,
+                (0, _) => SearchPoolLevel::CoursePatternOnly,
+                (_, _) => SearchPoolLevel::Hybrid,
+            },
+                
+        }
+    }
+
+    pub fn new_from_set(course_code_pool: HashSet<CourseCode>) -> Self {
+        let course_pattern_pool = course_code_pool.par_iter().filter(|course_code| course_code.is_pattern()).map(|course_code| course_code.clone()).collect::<HashSet<CourseCode>>();
+        let course_code_pool = course_code_pool.into_par_iter().filter(|course_code| !course_code.is_pattern()).collect::<HashSet<CourseCode>>();
+        SearchPool::new(course_code_pool, course_pattern_pool)
+    }
+
+    pub fn set_search_level(&mut self, level: SearchPoolLevel) {
+        self.pool_level = level;
+    }
+
+
+    pub fn adjust_pool_to_pattern(&mut self, num_of_match_school_code: u8, num_of_match_course_code: u8) {
+        let course_pattern_pool: HashSet<CourseCode> = self.course_pattern_pool.take().unwrap_or(HashSet::new());
+        let mut course_pattern_pool: HashSet<CourseCode> = course_pattern_pool.into_par_iter().map(|mut pattern_code| {
+            pattern_code.adjust_pattern(num_of_match_school_code, num_of_match_course_code);
+            pattern_code
+        }).collect();
+
+        let course_code_pool: HashSet<CourseCode> = self.course_code_pool.take().unwrap_or(HashSet::new());
+        let course_code_pool: HashSet<CourseCode> = course_code_pool.into_par_iter().map(|mut course_code| {
+            course_code.adjust_pattern(num_of_match_school_code, num_of_match_course_code);
+            course_code
+        }).collect();
+        course_pattern_pool.par_extend(course_code_pool.into_par_iter());
+        self.course_pattern_pool = Some(course_pattern_pool);
+        self.pool_level = SearchPoolLevel::CoursePatternOnly;
+    }
+
+    pub fn pool_level(&self) -> &SearchPoolLevel {
+        &self.pool_level
+    }
+
+    fn pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
+        match self.pool_level {
+            SearchPoolLevel::CourseCodeOnly => {
+                self.course_code_pool(course_manager)
+            },
+            SearchPoolLevel::CoursePatternOnly => {
+                self.course_pattern_pool(course_manager)
+            },
+            SearchPoolLevel::Hybrid => {
+                let mut result = self.course_code_pool(course_manager);
+                result.par_extend(self.course_pattern_pool(course_manager).into_par_iter());
+                result
+            }
+            
+        }
+    }
+
+    fn course_code_pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
+        self.course_code_pool.as_ref().unwrap_or(&HashSet::new()).par_iter().map(|course_code| course_manager.get_course(course_code)).filter(|course| course.is_ok()).map(|course| course.unwrap()).collect()
+    }
+
+    fn course_pattern_pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
+        course_manager.courses().par_iter().filter(|(course_code, course)| {
+            self.course_pattern_pool.as_ref().unwrap_or(&HashSet::new()).par_iter().any(|pattern_code| pattern_code.is_match(course.course_code()))
+        }).map(|(course_code, course)| {
+            course
+        }).collect()
+    }
+
+    
+
+    
+}
 
 impl CourseManager {
-    fn list_eligable_courses<'a, 'b, 'c, 'd, 'e>(
+    pub fn list_eligable_courses<'a, 'b, 'c, 'd, 'e>(
         &'a self,
-        pool: &'b Vec<CourseCode>,
+        search_pool: &'b SearchPool,
         program_code: &'c ProgramCode,
         taken_course: &'d Vec<String>,
         wam: &'e Option<u8>,
-    ) -> Vec<&'b CourseCode> {
-        pool.par_iter()
+    ) -> Vec<&'a course::Course> {
+        let pool: HashSet<&'a course::Course> = search_pool.pool(self);
+        pool.into_par_iter()
             .filter(|course_code| {
-                let course = self.get_course(course_code);
-                if course.is_err() {
-                    return false;
-                }
-                if let Ok(result) =
-                    course
-                        .unwrap()
-                        .is_eligable(program_code, taken_course, wam, self)
-                {
+                if let Ok(result) = course_code.is_eligable(program_code, taken_course, wam, self) {
                     return result;
                 } else {
                     return false;
                 }
             })
-            .collect::<Vec<&CourseCode>>()
+            .collect::<Vec<&'a course::Course>>()
+    }
+
+    pub fn list_courses_from_pool<'a, 'b>(&'a self, search_pool: &'b SearchPool) -> Vec<&'a course::Course>  {
+        search_pool.pool(self).into_par_iter().map(|course| course).collect()
     }
 }
 
@@ -1288,5 +1385,39 @@ mod tests {
     }
 
     #[test]
-    fn test_list_eligible_courses() {}
+    fn test_get_course_pool() {
+        let program_api = ProgramManager::new(
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let course_api = CourseManager::new(
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
+        );
+        let pool = program_api.get_course_pool(&ProgramCode::from_str("3784").unwrap());
+        assert!(pool.is_ok());
+        let pool = pool.unwrap();
+        let courses = course_api.list_courses_from_pool(&pool);
+        assert!(courses.len() > 0);
+    }
+
+    #[test]
+    fn test_list_eligible_courses() {
+        let program_api = ProgramManager::new(
+            "/root/UNSW-HandBookX/backend/data/programsProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/specialisationsProcessed.json",
+        );
+        let course_api = CourseManager::new(
+            "/root/UNSW-HandBookX/backend/data/coursesProcessed.json",
+            "/root/UNSW-HandBookX/backend/data/equivalents.json",
+            "/root/UNSW-HandBookX/backend/data/exclusions.json",
+        );
+        let pool = program_api.get_course_pool(&ProgramCode::from_str("3784").unwrap());
+        assert!(pool.is_ok());
+        let pool = pool.unwrap();
+        let courses = course_api.list_eligable_courses(&pool, &ProgramCode::from_str("3784").unwrap(), &vec![], &None);
+        assert!(courses.len() > 0);
+
+    }
 }

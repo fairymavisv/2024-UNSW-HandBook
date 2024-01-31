@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt::Display;
 use std::fs;
+use std::hash::Hash;
 use std::sync::Arc;
 use std::{collections::HashMap, fmt::Formatter};
 
@@ -119,6 +120,10 @@ impl Course {
     pub fn code(&self) -> String {
         self.code.to_string()
     }
+
+    pub fn course_code(&self) -> &CourseCode {
+        &self.code
+    }
     pub fn uoc(&self) -> u8 {
         self.uoc
     }
@@ -139,6 +144,23 @@ impl Course {
     }
     pub fn requirements(&self) -> Option<Arc<Requirements>> {
         self.requirements.as_ref().map(|x| x.clone())
+    }
+}
+
+impl Hash for Course {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.code.hash(state);
+    }
+}
+
+impl Eq for Course {
+    fn assert_receiver_is_total_eq(&self) {
+        //
+    }
+}
+impl PartialEq for Course {
+    fn eq(&self, other: &Self) -> bool {
+        self.code == other.code
     }
 }
 
