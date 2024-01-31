@@ -281,8 +281,6 @@ impl Course {
             Course::Text(_) => Vec::new(),
         }
     }
-
-    
 }
 
 impl PartialEq for Course {

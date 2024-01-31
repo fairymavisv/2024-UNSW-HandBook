@@ -27,11 +27,16 @@ const mockProgramData = {
     // ...其他程序数据
 };
 
+import { handbook_interface } from "src/data/data.service";
+
 export const programInterface = {
-    async getProgramInfo(programCode: string) {
+    getProgramInfo(programCode: string) {
         // 模拟异步行为
         //await new Promise(resolve => setTimeout(resolve, 100)); // 模拟延时
         return mockProgramData[programCode] || null;
+
+        // TODO: Handel the case when the programCode is not found, i.e. get_program_info return `undefined`
+        return handbook_interface.get_program_info(programCode)
     },
 
     async getMajorInfo(programCode: string, majorName: string) {
@@ -41,5 +46,13 @@ export const programInterface = {
             return program.majorList.find(major => major.name === majorName) || null;
         }
         return null;
+    },
+
+    getMajorInfo_new(programCode: string, specialisation_codes: [string]) {
+
+        
+        // TODO: Handel the case when the programCode, or specialisation_codess is not found, i.e. get_program_info return `undefined`
+        return handbook_interface.get_program_and_spec_info(programCode, specialisation_codes)
+        
     }
 };

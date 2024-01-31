@@ -38,11 +38,18 @@ const mockCourseData = {
     }
 };
 
+import { handbook_interface } from "src/data/data.service";
+
 export const CourseInterface = {
     async getCourseInfo(CourseCode: string) {
+
         // 模拟异步行为
         //await new Promise(resolve => setTimeout(resolve, 100)); // 模拟延时
         return mockCourseData[CourseCode] || null;
+        
+        // TODO: Handel the case when the CourseCode is not found, i.e. get_course_info return `undefined`
+        
+        return handbook_interface.get_course_info(CourseCode)
     },
 
 

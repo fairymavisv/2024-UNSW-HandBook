@@ -1,8 +1,13 @@
 use std::{
-    borrow::BorrowMut, collections::{BTreeMap, BTreeSet, HashSet}, mem::swap, ops::Deref
+    borrow::BorrowMut,
+    collections::{BTreeMap, BTreeSet, HashSet},
+    mem::swap,
+    ops::Deref,
 };
 
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelExtend, ParallelIterator};
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelExtend, ParallelIterator,
+};
 
 use crate::{
     course::{self, CourseManager},
@@ -144,7 +149,10 @@ impl ProgramManager {
                                     spec.name(),
                                     spec_component_name
                                 ),
-                                courses.par_iter().map(|course| course.to_string()).collect(),
+                                courses
+                                    .par_iter()
+                                    .map(|course| course.to_string())
+                                    .collect(),
                             );
                             result.push(each);
                         });
@@ -221,7 +229,10 @@ pub struct SearchPool {
 }
 
 impl SearchPool {
-    pub fn new(course_code_pool: HashSet<CourseCode>, course_pattern_pool: HashSet<CourseCode>) -> Self {
+    pub fn new(
+        course_code_pool: HashSet<CourseCode>,
+        course_pattern_pool: HashSet<CourseCode>,
+    ) -> Self {
         let course_code_pool_size = course_code_pool.len();
         let course_pattern_pool_size = course_pattern_pool.len();
         Self {
@@ -239,13 +250,19 @@ impl SearchPool {
                 (0, _) => SearchPoolLevel::CoursePatternOnly,
                 (_, _) => SearchPoolLevel::Hybrid,
             },
-                
         }
     }
 
     pub fn new_from_set(course_code_pool: HashSet<CourseCode>) -> Self {
-        let course_pattern_pool = course_code_pool.par_iter().filter(|course_code| course_code.is_pattern()).map(|course_code| course_code.clone()).collect::<HashSet<CourseCode>>();
-        let course_code_pool = course_code_pool.into_par_iter().filter(|course_code| !course_code.is_pattern()).collect::<HashSet<CourseCode>>();
+        let course_pattern_pool = course_code_pool
+            .par_iter()
+            .filter(|course_code| course_code.is_pattern())
+            .map(|course_code| course_code.clone())
+            .collect::<HashSet<CourseCode>>();
+        let course_code_pool = course_code_pool
+            .into_par_iter()
+            .filter(|course_code| !course_code.is_pattern())
+            .collect::<HashSet<CourseCode>>();
         SearchPool::new(course_code_pool, course_pattern_pool)
     }
 
@@ -253,19 +270,30 @@ impl SearchPool {
         self.pool_level = level;
     }
 
+    pub fn adjust_pool_to_pattern(
+        &mut self,
+        num_of_match_school_code: u8,
+        num_of_match_course_code: u8,
+    ) {
+        let course_pattern_pool: HashSet<CourseCode> =
+            self.course_pattern_pool.take().unwrap_or(HashSet::new());
+        let mut course_pattern_pool: HashSet<CourseCode> = course_pattern_pool
+            .into_par_iter()
+            .map(|mut pattern_code| {
+                pattern_code.adjust_pattern(num_of_match_school_code, num_of_match_course_code);
+                pattern_code
+            })
+            .collect();
 
-    pub fn adjust_pool_to_pattern(&mut self, num_of_match_school_code: u8, num_of_match_course_code: u8) {
-        let course_pattern_pool: HashSet<CourseCode> = self.course_pattern_pool.take().unwrap_or(HashSet::new());
-        let mut course_pattern_pool: HashSet<CourseCode> = course_pattern_pool.into_par_iter().map(|mut pattern_code| {
-            pattern_code.adjust_pattern(num_of_match_school_code, num_of_match_course_code);
-            pattern_code
-        }).collect();
-
-        let course_code_pool: HashSet<CourseCode> = self.course_code_pool.take().unwrap_or(HashSet::new());
-        let course_code_pool: HashSet<CourseCode> = course_code_pool.into_par_iter().map(|mut course_code| {
-            course_code.adjust_pattern(num_of_match_school_code, num_of_match_course_code);
-            course_code
-        }).collect();
+        let course_code_pool: HashSet<CourseCode> =
+            self.course_code_pool.take().unwrap_or(HashSet::new());
+        let course_code_pool: HashSet<CourseCode> = course_code_pool
+            .into_par_iter()
+            .map(|mut course_code| {
+                course_code.adjust_pattern(num_of_match_school_code, num_of_match_course_code);
+                course_code
+            })
+            .collect();
         course_pattern_pool.par_extend(course_code_pool.into_par_iter());
         self.course_pattern_pool = Some(course_pattern_pool);
         self.pool_level = SearchPoolLevel::CoursePatternOnly;
@@ -277,36 +305,47 @@ impl SearchPool {
 
     fn pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
         match self.pool_level {
-            SearchPoolLevel::CourseCodeOnly => {
-                self.course_code_pool(course_manager)
-            },
-            SearchPoolLevel::CoursePatternOnly => {
-                self.course_pattern_pool(course_manager)
-            },
+            SearchPoolLevel::CourseCodeOnly => self.course_code_pool(course_manager),
+            SearchPoolLevel::CoursePatternOnly => self.course_pattern_pool(course_manager),
             SearchPoolLevel::Hybrid => {
                 let mut result = self.course_code_pool(course_manager);
                 result.par_extend(self.course_pattern_pool(course_manager).into_par_iter());
                 result
             }
-            
         }
     }
 
-    fn course_code_pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
-        self.course_code_pool.as_ref().unwrap_or(&HashSet::new()).par_iter().map(|course_code| course_manager.get_course(course_code)).filter(|course| course.is_ok()).map(|course| course.unwrap()).collect()
+    fn course_code_pool<'a, 'b>(
+        &'a self,
+        course_manager: &'b CourseManager,
+    ) -> HashSet<&'b course::Course> {
+        self.course_code_pool
+            .as_ref()
+            .unwrap_or(&HashSet::new())
+            .par_iter()
+            .map(|course_code| course_manager.get_course(course_code))
+            .filter(|course| course.is_ok())
+            .map(|course| course.unwrap())
+            .collect()
     }
 
-    fn course_pattern_pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
-        course_manager.courses().par_iter().filter(|(course_code, course)| {
-            self.course_pattern_pool.as_ref().unwrap_or(&HashSet::new()).par_iter().any(|pattern_code| pattern_code.is_match(course.course_code()))
-        }).map(|(course_code, course)| {
-            course
-        }).collect()
+    fn course_pattern_pool<'a, 'b>(
+        &'a self,
+        course_manager: &'b CourseManager,
+    ) -> HashSet<&'b course::Course> {
+        course_manager
+            .courses()
+            .par_iter()
+            .filter(|(course_code, course)| {
+                self.course_pattern_pool
+                    .as_ref()
+                    .unwrap_or(&HashSet::new())
+                    .par_iter()
+                    .any(|pattern_code| pattern_code.is_match(course.course_code()))
+            })
+            .map(|(course_code, course)| course)
+            .collect()
     }
-
-    
-
-    
 }
 
 impl CourseManager {
@@ -329,8 +368,15 @@ impl CourseManager {
             .collect::<Vec<&'a course::Course>>()
     }
 
-    pub fn list_courses_from_pool<'a, 'b>(&'a self, search_pool: &'b SearchPool) -> Vec<&'a course::Course>  {
-        search_pool.pool(self).into_par_iter().map(|course| course).collect()
+    pub fn list_courses_from_pool<'a, 'b>(
+        &'a self,
+        search_pool: &'b SearchPool,
+    ) -> Vec<&'a course::Course> {
+        search_pool
+            .pool(self)
+            .into_par_iter()
+            .map(|course| course)
+            .collect()
     }
 }
 
@@ -1416,8 +1462,12 @@ mod tests {
         let pool = program_api.get_course_pool(&ProgramCode::from_str("3784").unwrap());
         assert!(pool.is_ok());
         let pool = pool.unwrap();
-        let courses = course_api.list_eligable_courses(&pool, &ProgramCode::from_str("3784").unwrap(), &vec![], &None);
+        let courses = course_api.list_eligable_courses(
+            &pool,
+            &ProgramCode::from_str("3784").unwrap(),
+            &vec![],
+            &None,
+        );
         assert!(courses.len() > 0);
-
     }
 }

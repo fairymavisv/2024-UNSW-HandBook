@@ -254,7 +254,8 @@ impl From<&str> for CourseCode {
 impl PartialEq for CourseCode {
     fn eq(&self, other: &Self) -> bool {
         if self.num_of_match_school == other.num_of_match_school
-            && self.num_of_match_code == other.num_of_match_code {
+            && self.num_of_match_code == other.num_of_match_code
+        {
             return self.to_string() == other.to_string();
         }
         self.school_code
