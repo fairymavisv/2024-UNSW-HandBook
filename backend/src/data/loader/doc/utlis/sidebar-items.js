@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Campus","This enum represents the campus"],["OfferingTerm","This enum represents the offering term"],["StudyLevel","This enum represents the study level"]],"struct":[["CourseCode","This struct represents a course code"],["ProgramCode","This struct represents a program code"]]};

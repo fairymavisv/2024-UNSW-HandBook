@@ -1,10 +1,11 @@
-use core::num;
+/// This module contains the definition of the `CourseCode`, `ProgramCode`, `OfferingTerm`, `Campus`, and `StudyLevel`
 use std::{
     fmt::{Debug, Display, Formatter},
     hash::Hash,
 };
 
 // #[derive(Debug)]
+/// This struct represents a program code
 #[derive(Clone)]
 pub struct ProgramCode {
     code: [char; 4],
@@ -28,10 +29,43 @@ impl PartialEq for ProgramCode {
 }
 
 impl ProgramCode {
+    /// Create a new `ProgramCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `code` - A 4-character array representing the program code
+    /// 
+    /// # Returns
+    /// 
+    /// A `ProgramCode` instance
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let code = ProgramCode::new(['Z', 'C', 'S', '1']);
+    /// ```
     pub fn new(code: [char; 4]) -> ProgramCode {
         ProgramCode { code }
     }
 
+    /// Parse a string into a `ProgramCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `s` - A string slice representing the program code
+    /// 
+    /// # Returns
+    /// 
+    /// A `ProgramCode` instance
+    /// None if the string is not a valid program code
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// 
+    /// let code = ProgramCode::from_str("ZCS1").unwrap();
+    /// ```
+    /// 
     pub fn from_str(s: &str) -> Option<ProgramCode> {
         if s.len() != 4 {
             return None;
@@ -46,11 +80,23 @@ impl ProgramCode {
         Some(ProgramCode::new(code))
     }
 
+    /// Check if a string is a valid program code
     pub fn is_code(s: &str) -> bool {
         ProgramCode::from_str(s).is_some()
     }
 }
 
+
+/// This struct represents a course code
+/// 
+/// It contains the school code and the course code
+/// 
+/// It could represent a pattern or a specific course code
+/// 
+/// Specific course code has 4 alphabetic characters for the school code and 4 numeric characters for the course code
+/// 
+/// Pattern course code has 0-4 alphabetic characters for the school code and 0-4 numeric characters for the course code.
+/// Fill the rest with '.' and '#' for the school code and course code respectively if the length is less than 4.
 #[derive(Clone)]
 pub struct CourseCode {
     school_code: [char; 4],
@@ -93,6 +139,16 @@ impl Hash for CourseCode {
 }
 
 impl CourseCode {
+    /// Create a new `CourseCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `school_code` - A 4-character array representing the school code
+    /// * `course_code` - A 4-character array representing the course code
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
     pub fn new(school_code: [char; 4], course_code: [char; 4]) -> CourseCode {
         CourseCode {
             school_code,
@@ -101,10 +157,41 @@ impl CourseCode {
             num_of_match_code: 4,
         }
     }
-    fn from_str_unsafe(s: &str) -> Self {
+
+    /// Parse a string into a `CourseCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `s` - A string slice representing the course code
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let code = CourseCode::from_str("ZCSC1234").unwrap();
+    /// ```
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if the string is not a valid course code, i.e. it does not a specific course code.
+    pub fn from_str_unsafe(s: &str) -> Self {
         CourseCode::from_str(s).unwrap()
     }
 
+    /// Create a new `CourseCode` instance with a specific school code and a level
+    /// 
+    /// # Arguments
+    /// 
+    /// * `school_code` - A 4-character array representing the school code
+    /// * `level` - A number representing the level
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
+    /// 
     pub fn new_school_with_level(school_code: [char; 4], level: u8) -> CourseCode {
         let mut course_code: [char; 4] = ['#'; 4];
         course_code[0] = char::from_u32(level as u32).unwrap();
@@ -116,6 +203,15 @@ impl CourseCode {
         }
     }
 
+    /// Create a new `CourseCode` instance with a pattern school code and a specific course code
+    /// 
+    /// # Arguments
+    /// 
+    /// * `course_code` - A 4-character array representing the course code
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
     pub fn new_any_school(school_code: [char; 4]) -> CourseCode {
         let mut course_code: [char; 4] = ['#'; 4];
         CourseCode {
@@ -126,6 +222,15 @@ impl CourseCode {
         }
     }
 
+    /// Create a new `CourseCode` instance with a pattern school code and a pattern course code
+    /// 
+    /// # Arguments
+    /// 
+    /// * `level` - A number representing the level
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
     pub fn new_any_school_with_level(level: u8) -> CourseCode {
         let school_code: [char; 4] = ['.'; 4];
         let mut course_code: [char; 4] = ['#'; 4];
@@ -138,18 +243,42 @@ impl CourseCode {
         }
     }
 
+    /// Check if the `CourseCode` instance is a pattern
     pub fn is_pattern(&self) -> bool {
         self.num_of_match_school != 4 || self.num_of_match_code != 4
     }
 
+    /// Check if the `CourseCode` instance is a specific course code
     pub fn is_course_code(&self) -> bool {
         self.num_of_match_school == 4 && self.num_of_match_code == 4
     }
 
+    /// Parse a string into a `CourseCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `s` - A string slice representing the course code
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
+    /// None if the string is not a valid course code, i.e. it is not either a specific course code or a valid pattern.
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let code = CourseCode::parse("ZCSC1234").unwrap();
+    /// let code = CourseCode::parse("ZC..1").unwrap(); 
+    /// let code = CourseCode::parse("ZCSC12").unwrap(); 
+    /// let code = CourseCode::parse("....").unwrap(); // all course in UNSW
+    /// let code = CourseCode::parse("").unwrap(); // all course in UNSW
+    /// ```
+    /// # Note
+    /// `s` must at least have 4 characters if required any numeric pattern
+    /// 
+    /// This function is more flexible than `from_str` as it can parse a pattern course code, 
+    /// please use this function if you are not sure if the string is a specific course code or a pattern.
     pub fn parse(s: &str) -> Option<CourseCode> {
-        if s.len() == 8 {
-            return CourseCode::from_str(s);
-        }
         let mut school_code: [char; 4] = ['.'; 4];
         let mut course_code: [char; 4] = ['#'; 4];
         let mut num_of_match_school = 0;
@@ -176,6 +305,25 @@ impl CourseCode {
         })
     }
 
+    /// Parse a string into a `CourseCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `s` - A string slice representing the course code
+    /// 
+    /// # Returns
+    /// 
+    /// A `CourseCode` instance
+    /// None if the string is not a valid course code, i.e it is not a specific course code, 4 alphabetic characters and 4 numeric characters.
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let code = CourseCode::from_str("ZCSC1234").unwrap();
+    /// ```
+    /// 
+    /// # Note
+    /// This function is more strict than `parse` as it can only parse a specific course code.
     pub fn from_str(s: &str) -> Option<CourseCode> {
         if s.len() != 8 {
             return None;
@@ -195,19 +343,43 @@ impl CourseCode {
         Some(CourseCode::new(school_code, course_code))
     }
 
+    /// Check if a string is a valid course code
     pub fn is_code(s: &str) -> bool {
         CourseCode::from_str(s).is_some()
     }
+
+    /// Get the school code, i.e. the first 4 characters of the course code
     pub fn school_code(&self) -> &[char; 4] {
         &self.school_code
     }
+
+    /// Get the course code, i.e. the last 4 characters of the course code/ numeric characters
     pub fn course_code(&self) -> &[char; 4] {
         &self.course_code
     }
+
+    /// Get the level of the course code
     pub fn level(&self) -> u8 {
         self.course_code[0].to_digit(10).unwrap() as u8
     }
 
+    /// Adjust the pattern of the course code
+    /// 
+    /// # Arguments
+    /// 
+    /// * `num_of_match_school_code` - A number representing the number of characters to match for the school code
+    /// * `num_of_match_course_code` - A number representing the number of characters to match for the course code
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut code = CourseCode::from_str("ZCSC1234").unwrap();
+    /// 
+    /// code.adjust_pattern(2, 3);
+    /// ```
+    /// 
+    /// # Note
+    /// This function is useful when you want to adjust the pattern of the course code.
     pub fn adjust_pattern(&mut self, num_of_match_school_code: u8, num_of_match_course_code: u8) {
         if num_of_match_school_code > 4 || num_of_match_course_code > 4 {
             return;
@@ -240,6 +412,15 @@ impl CourseCode {
         }
     }
 
+    /// Check if the `CourseCode` instance is a match of another `CourseCode` instance
+    /// 
+    /// # Arguments
+    /// 
+    /// * `other` - Another `CourseCode` instance
+    /// 
+    /// # Returns
+    /// 
+    /// A boolean value
     pub fn is_match(&self, other: &CourseCode) -> bool {
         self.eq(other)
     }
@@ -272,6 +453,7 @@ impl PartialEq for CourseCode {
     }
 }
 
+/// This enum represents the offering term
 #[derive(Debug, Clone)]
 pub enum OfferingTerm {
     Term1,
@@ -280,7 +462,17 @@ pub enum OfferingTerm {
     Summer,
 }
 
+
 impl OfferingTerm {
+    /// Parse a string into a `OfferingTerm` instance
+    /// 
+    /// T1 -> Term1
+    /// 
+    /// T2 -> Term2
+    /// 
+    /// T3 -> Term3
+    /// 
+    /// T0 -> Summer
     pub fn from_str(s: &str) -> Option<OfferingTerm> {
         match s {
             "T1" => Some(OfferingTerm::Term1),
@@ -325,6 +517,7 @@ impl PartialEq for OfferingTerm {
     }
 }
 
+/// This enum represents the campus
 #[derive(Clone)]
 pub enum Campus {
     Sydney,
@@ -342,6 +535,7 @@ impl Campus {
     }
 }
 
+/// This enum represents the study level
 #[derive(Clone)]
 pub enum StudyLevel {
     Undergraduate,

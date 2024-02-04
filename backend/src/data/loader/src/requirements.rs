@@ -1,16 +1,37 @@
-use core::num;
-use std::fmt::Display;
 
-use rayon::iter;
-use wasm_bindgen::convert::OptionIntoWasmAbi;
+use std::fmt::Display;
 
 use crate::{
     course::{self, Course, CourseManager},
-    program,
     utlis::{CourseCode, ProgramCode},
 };
 
-// #[derive(Clone)]
+/// the requirements struct is used to store the requirements string and the parsed requirements
+/// 
+/// The Node trait is used to represent the requirements tree
+/// 
+/// Node types are used to represent the different types of nodes in the requirements tree
+/// 
+/// Node types include:
+/// - ListNode: A list of nodes
+/// - BinaryNode: A binary node
+/// - UOCAtLevelNode: A UOC at level node
+/// - UOCFromNode: A UOC from node
+/// - UOCNode: A UOC node
+/// - WamNode: A WAM node
+/// - TextNode: A text node
+/// - CodeNode: A program/course code node
+/// 
+/// While parsing the requirements, the raw requirements string is tokenized into a list of tokens and ignored the unnecessary characters
+/// 
+/// # Warning
+/// The requirements string is case-sensitive, must follow the format strictly.
+/// 
+/// This may memory consuming, and the performance may not be good due to the recursive nature of the requirements tree.
+/// But it is the most flexible way to represent the requirements. 
+/// Consider the most of requirements are not too complex. I think it is acceptable.
+/// 
+/// 
 pub struct Requirements {
     // TODO: Maybe use Rc in the future steps for optimizing memory usage
     contents: Option<Box<dyn Node + Send + Sync>>,
@@ -32,34 +53,44 @@ impl Display for Requirements {
     }
 }
 
+/// Token types - Keyword
 #[derive(Debug)]
 pub enum Keyword {
     LEVEL,
     UOC,
     WAM,
 }
+
+/// Token types - Operator
 #[derive(Debug)]
 pub enum Operator {
     OR,
     AND,
 }
 
+/// Token types - Preposition
 #[derive(Debug)]
 pub enum Preposition {
     AT,
     FROM,
     OF,
 }
+
+/// Token types - Code
 #[derive(Debug)]
 pub enum Code {
     COURSE(CourseCode),
     PROGRAM(ProgramCode),
 }
+
+/// Token types - Bracket
 #[derive(Debug)]
 pub enum Bracket {
     OPEN,
     CLOSE,
 }
+
+/// Main token types
 #[derive(Debug)]
 pub enum Token {
     COMMA,
@@ -72,6 +103,7 @@ pub enum Token {
     TEXT(String),
 }
 
+/// Extract the prerequisite from the line
 macro_rules! extract_prerequisite {
     ($line:ident, $prerequisite:expr) => {{
         if $line.starts_with($prerequisite) {
@@ -80,12 +112,66 @@ macro_rules! extract_prerequisite {
     }};
 }
 
+/// Print the buffer
 fn print_buffer(buf: &Vec<Box<dyn Node + Send + Sync>>) {
 
     // println!("Buffer tokens: {}", buf.iter().map(|node| node.get()).collect::<Vec<String>>().join(", "))
 }
 
 impl Requirements {
+
+    /// Create a new requirements struct from the raw requirements string
+    /// 
+    /// # Arguments
+    /// 
+    /// * `raw_requirements` - The raw requirements string
+    /// 
+    /// # Returns
+    /// 
+    /// A new requirements struct
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// 
+    /// let requirements = Requirements::new("Prerequisites: COMP1511 and COMP1521");
+    /// 
+    /// ```
+    /// 
+    /// # Panics
+    /// 
+    /// If the raw requirements string is invalid
+    /// 
+    pub fn new(raw_requirements: &str) -> Requirements {
+        Requirements::try_new(raw_requirements).expect("Invalid requirements string")
+    }
+
+    /// Try to create a new requirements struct from the raw requirements string
+    /// 
+    /// # Arguments
+    /// 
+    /// * `raw_requirements` - The raw requirements string
+    /// 
+    /// # Returns
+    /// 
+    /// A new requirements struct
+    /// None if the raw requirements string is invalid
+    /// Error message if the raw requirements string is invalid
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let requirements = Requirements::try_new("Prerequisites: COMP1511 and COMP1521");
+    /// 
+    /// ```
+    /// 
+    /// # Note
+    /// The raw requirements string is still valid if it does not contain the "Prerequisites" keyword, 
+    /// but the parsed requirements will be empty. 
+    /// 
+    /// Also, the empty is valid as well, it represents no requirements
+    /// 
+    /// Otherwise, all prerequisites will be parsed and stored in the requirements struct when prerequisites as the prefix
     pub fn try_new(raw_requirements: &str) -> Option<Requirements> {
         // println!("Parsing raw requirement {}", raw_requirements);
         let cleaned_requirements = Requirements::clean(raw_requirements);
@@ -102,6 +188,33 @@ impl Requirements {
         }
     }
 
+    /// Check if the requirements are satisfied
+    /// 
+    /// # Arguments
+    /// 
+    /// * `program_code` - The program code
+    /// * `taken_course` - The list of taken courses
+    /// * `wam` - The WAM
+    /// * `course_manager` - The course manager
+    /// 
+    /// # Returns
+    /// 
+    /// True if the requirements are satisfied
+    /// False if the requirements are not satisfied
+    /// Error message if any error occurs
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let requirements = Requirements::try_new("Prerequisites: COMP1511 and COMP1521").unwrap();
+    /// let program_code = ProgramCode::from_str("3778").unwrap();
+    /// let taken_course = vec!["COMP1511".to_string(), "COMP1521".to_string()];
+    /// let wam = Some(65);
+    /// // assume the course manager is loaded correctly
+    /// let course_manager = CourseManager::empty(); 
+    /// let result = requirements.is_satisified(&program_code, &taken_course, &wam, &course_manager);
+    /// assert!(result.unwrap());
+    /// ```
     pub fn is_satisified(
         &self,
         program_code: &ProgramCode,
@@ -117,9 +230,9 @@ impl Requirements {
                 .unwrap()
                 .evulate(program_code, taken_course, wam, course_manager)
         }
-        // todo!()
     }
 
+    /// Clean the raw requirements string by removing the unnecessary characters
     fn clean(raw_requirements: &str) -> String {
         let cleaned_lines = raw_requirements
             .trim()
@@ -141,6 +254,7 @@ impl Requirements {
         String::from("")
     }
 
+    /// Tokenize the raw requirements string
     fn tokenize(raw_requirements: &str) -> Vec<Token> {
         // let cleanned_requirements = Requirements::clean(raw_requirements);
         let mut tokens: Vec<Token> = Vec::new();
@@ -220,10 +334,10 @@ impl Requirements {
                 }
             }
         }
-        // println!("Tokens: {:?}", tokens);
         tokens
     }
 
+    /// Parse the tokens into a requirements tree
     fn parse(tokens: &mut Vec<Token>) -> Result<Option<Box<dyn Node + Send + Sync>>, String> {
         // if tokens.len() == 0 {
         //     return Ok(None);
@@ -231,7 +345,8 @@ impl Requirements {
         tokens.reverse();
         Requirements::do_parse(tokens)
     }
-
+    
+    /// Parse the tokens into a requirements tree
     fn do_parse(tokens: &mut Vec<Token>) -> Result<Option<Box<dyn Node + Send + Sync>>, String> {
         // let mut tokens = Requirements::tokenize(raw_requirements);
         // let requirement = Requirements::new(String::from("raw_requirements"));
@@ -422,12 +537,32 @@ impl Requirements {
     }
 }
 
+// Node in the requirements tree
 pub trait Node {
+    /// Parse the tokens into a UOC from node
+    /// 
+    /// # Arguments
+    /// 
+    /// * `tokens` - The list of tokens
+    /// 
+    /// # Returns
+    /// 
+    /// Ok(()) if the parsing is successful.
+    /// 
+    /// Warning message if the parsing is successful but not as expected. 
+    /// This may lead to the unexpected result
+    /// 
+    /// Error message if the parsing is not successful
+    /// 
+    /// All Warning and Error can find more details in the errors.md files in the directory
+    /// 
     fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         Ok(())
     }
-
+    /// Get the string representation of the node
     fn get(&self) -> String;
+
+    /// Check if the requirement node is satisfied
     fn evulate(
         &self,
         program_code: &ProgramCode,
@@ -437,19 +572,29 @@ pub trait Node {
     ) -> Result<bool, String>;
 }
 
-// #[derive(Debug)]
 
-// node, node, node
-struct ListNode {
+/// A list of nodes
+/// 
+/// The requirement is satisfied if all the nodes are satisfied
+/// 
+/// The requirement is not satisfied if any of the nodes is not satisfied
+/// 
+/// The requirement is satisfied if the list is empty
+/// 
+/// # Example
+/// Course Node, Course Node, Course Node
+pub struct ListNode {
     nodes: Vec<Box<dyn Node + Send + Sync>>,
 }
 
 impl ListNode {
+    /// create a new list node
     fn new(nodes: &mut Vec<Box<dyn Node + Send + Sync>>) -> Self {
         ListNode {
             nodes: nodes.drain(..).collect(),
         }
     }
+    /// create a new list node from a list of nodes
     fn new_from_nodes(nodes: Vec<Box<dyn Node + Send + Sync>>) -> Self {
         ListNode { nodes }
     }
@@ -466,6 +611,7 @@ impl Node for ListNode {
                 .join(", ")
         )
     }
+
     fn evulate(
         &self,
         program_code: &ProgramCode,
@@ -480,11 +626,16 @@ impl Node for ListNode {
     }
 }
 
-// TODO
-// BABS2204 OR BABS2264 OR BIOC2201
-// Node or Node and Node, And Node
-// (BABS2204 OR (BABS2264 OR BIOC2201)) and (BABS2204 OR (BABS2264 OR BIOC2201)
-// OR OR BABS2204 BABS2264  BIOC2201
+/// A binary node
+/// 
+/// The requirement is satisfied if both the left and right nodes are satisfied when the operator is AND
+/// 
+/// The requirement is satisfied if either the left or right nodes are satisfied when the operator is OR
+/// 
+/// # Example
+/// 
+/// - Course Node AND Course Node AND Course Node
+/// - Course Node AND UOC Node
 pub struct BinaryNode {
     left: Box<dyn Node + Send + Sync>,
     right: Box<dyn Node + Send + Sync>,
@@ -492,6 +643,7 @@ pub struct BinaryNode {
 }
 
 impl BinaryNode {
+    /// Create a new binary node
     pub fn new(
         left: Box<dyn Node + Send + Sync>,
         right: Box<dyn Node + Send + Sync>,
@@ -503,9 +655,6 @@ impl BinaryNode {
             operator,
         }
     }
-    // fn parse(&mut self, tokens: &mut Vec<Box<dyn Node>>) -> bool {
-    //     true
-    // }
 }
 
 impl Node for BinaryNode {
@@ -562,12 +711,18 @@ impl Node for BinaryNode {
     }
 }
 
-//  UOC at level x
-struct UOCAtLevelNode {
+///  UoC at level Node
+///
+/// The requirement is satisfied if the number of UOC at the given level is greater than or equal to the given UOC
+/// 
+/// # Example
+/// - Complete 36 UOC at level 1
+pub struct UOCAtLevelNode {
     uoc: u8,
     level: u8,
 }
 impl UOCAtLevelNode {
+    /// Create a new UOC at level node
     fn new(uoc: u8) -> UOCAtLevelNode {
         UOCAtLevelNode { uoc, level: 0 }
     }
@@ -650,12 +805,22 @@ impl Node for UOCAtLevelNode {
     }
 }
 
-//  UoC from XXXXX
+///  UOC from Node
+/// 
+/// The requirement is satisfied if the number of UOC from the given courses is greater than or equal to the given UOC
+/// 
+/// # Example
+/// - Complete 6 UOC from following course COMM1100 or COMM1120 or COMM1140
+/// 
+/// # Note
+/// The UOC from node can be followed by a list of course codes, 
+/// and the list of course codes must be followed by an OR operator
 pub struct UOCFromNode {
     uoc: u8,
     code: Vec<CourseCode>,
 }
 impl UOCFromNode {
+    /// Create a new UOC from node
     fn new(uoc: u8) -> UOCFromNode {
         UOCFromNode {
             uoc,
@@ -665,6 +830,7 @@ impl UOCFromNode {
 }
 
 impl Node for UOCFromNode {
+
     fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         tokens.pop();
         // println!("line 520 Tokens: {:?}", tokens);
@@ -747,11 +913,18 @@ impl Node for UOCFromNode {
     }
 }
 
+/// UOC Node
+/// 
+/// The requirement is satisfied if the number of UOC is greater than or equal to the given UOC
+/// 
+/// # Example
+/// - Complete at least 112 UOC
 pub struct UOCNode {
     uoc: u8,
 }
 
 impl UOCNode {
+    /// Create a new UOC node
     pub fn new(uoc: u8) -> UOCNode {
         UOCNode { uoc }
     }
@@ -786,17 +959,25 @@ impl Node for UOCNode {
     }
 }
 
-// WAM of
+///  WAM of Node
+/// 
+/// The requirement is satisfied if the WAM is greater than or equal to the given WAM
+/// 
+/// # Example
+/// - WAM of at least 65
+/// - Wam of 60
 pub struct WamNode {
     wam: u8,
 }
 
 impl WamNode {
+    /// Create a new WAM node
     pub fn new(wam: u8) -> WamNode {
         WamNode { wam }
     }
 }
 impl Node for WamNode {
+
     fn parse(&mut self, tokens: &mut Vec<Token>) -> Result<(), String> {
         let last = tokens.last();
         if last.is_none() {
@@ -842,11 +1023,18 @@ impl Node for WamNode {
     }
 }
 
+/// Text Node
+/// 
+/// The requirement is satisfied at any time
+/// 
+/// The text node is used to represent the text in the requirements 
+/// or any other type of node that is not supported yet
 pub struct TextNode {
     text: String,
 }
 
 impl TextNode {
+    /// Create a new text node
     pub fn new(text: String) -> TextNode {
         TextNode { text }
     }
@@ -867,11 +1055,21 @@ impl Node for TextNode {
     }
 }
 
+/// Code Node
+/// 
+/// The requirement is satisfied if the given code is satisfied
+/// 
+/// The code node is used to represent the course code or program code in the requirements
+/// 
+/// # Example
+/// - COMP1511
+/// - computer science 3778
 pub struct CodeNode {
     code: Code,
 }
 
 impl CodeNode {
+    /// Create a new code node
     pub fn new(code: Code) -> CodeNode {
         CodeNode { code }
     }

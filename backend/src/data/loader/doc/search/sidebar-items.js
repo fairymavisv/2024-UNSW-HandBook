@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["SearchPoolLevel","Provide search functionality for course"]],"struct":[["SearchPool","A search pool that contains the course code pool and the course pattern pool"]]};

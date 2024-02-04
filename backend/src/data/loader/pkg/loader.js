@@ -113,6 +113,7 @@ function addHeapObject(obj) {
     return idx;
 }
 /**
+* Test function to check if the wasm is working
 * @param {string} input
 * @returns {string}
 */
@@ -189,6 +190,7 @@ export function wbg_rayon_start_worker(receiver) {
 }
 
 /**
+* The HandbookDataInterface is the main interface for the typescript to access the handbook data
 */
 export class HandbookDataInterface {
 
@@ -212,6 +214,28 @@ export class HandbookDataInterface {
         wasm.__wbg_handbookdatainterface_free(ptr);
     }
     /**
+    * Create a new HandbookDataInterface
+    * * wasm_bindgen is used to expose the function to the typescript
+    *
+    * # Arguments
+    *
+    * * `data_src_path` - The path to the data source
+    *
+    * # Returns
+    *
+    * The HandbookDataInterface
+    *
+    * # Example
+    *
+    * ```
+    * let data_src_path = "data";
+    * let handbook_data_interface = HandbookDataInterface::new(data_src_path);
+    * ```
+    *
+    * # Panics
+    *
+    * If the data source is not found, the function will panic
+    *
     * @param {string} data_src_path
     * @returns {HandbookDataInterface}
     */
@@ -222,6 +246,26 @@ export class HandbookDataInterface {
         return HandbookDataInterface.__wrap(ret);
     }
     /**
+    * Get the course information
+    * * wasm_bindgen is used to expose the function to the typescript
+    *
+    * # Arguments
+    *
+    * * `code` - The course code
+    *
+    * # Returns
+    *
+    * The JsCourseInfo
+    * None if the course code is not found, or the course code is invalid
+    *
+    * If the course code is not found, the function will print the error message
+    *
+    * # Example
+    *
+    * ```
+    * let code = "COMP1511";
+    * let course_info = handbook_data_interface.get_course_info(code);
+    * ```
     * @param {string} code
     * @returns {JsCourseInfo | undefined}
     */
@@ -232,6 +276,29 @@ export class HandbookDataInterface {
         return takeObject(ret);
     }
     /**
+    * Get the program information
+    * * wasm_bindgen is used to expose the function to the typescript
+    *
+    * # Arguments
+    *
+    *  * `code` - The program code
+    *
+    * # Returns
+    *
+    * The JsProgramInfo
+    * None if the program code is not found, or the program code is invalid
+    *
+    * If the program code is not found, the function will print the error message
+    *
+    * All specialisation codes will be included in the structure field
+    *
+    * # Example
+    *
+    * ```
+    * let code = "3778";
+    * let program_info = handbook_data_interface.get_program_info(code);
+    * ```
+    *
     * @param {string} code
     * @returns {JsProgramInfo | undefined}
     */
@@ -242,6 +309,32 @@ export class HandbookDataInterface {
         return takeObject(ret);
     }
     /**
+    * Get the program and specialisation information
+    * * wasm_bindgen is used to expose the function to the typescript
+    *
+    * # Arguments
+    *
+    * * `code` - The program code
+    * * `spec` - The specialisation codes, if any.
+    * it could be None, or a list of specialisation codes (major, minor, honours)
+    * If None, the function will return program information and all detailed specialisation information
+    *
+    * # Returns
+    *
+    * The JsProgramInfo
+    * None if the program code is not found, or the program code is invalid
+    *
+    * If the program code is not found, the function will print the error message
+    *
+    * Only specialisations that given specialisation codes will be included in the structure field
+    *
+    * # Example
+    *
+    * ```
+    * let code = "3778";
+    * let spec = vec!["COMPA1", "ACCTA1"];
+    * let program_info = handbook_data_interface.get_program_and_spec_info(code, spec);
+    * ```
     * @param {string} code
     * @param {(string)[] | undefined} [spec]
     * @returns {JsProgramInfo | undefined}
@@ -255,6 +348,25 @@ export class HandbookDataInterface {
         return takeObject(ret);
     }
     /**
+    * Get the specialisation information
+    * * wasm_bindgen is used to expose the function to the typescript
+    *
+    * # Arguments
+    *
+    * * `code` - The program code
+    *
+    * # Returns
+    *
+    * The List of Specialisation Code
+    * None if the program code is not found, or the program code is invalid
+    *
+    * # Example
+    *
+    * ```
+    * let code = "3778";
+    * let specialisation_info = handbook_data_interface.get_specialisation_info(code);
+    * ```
+    *
     * @param {string} program_code
     * @returns {(string)[] | undefined}
     */
@@ -277,19 +389,46 @@ export class HandbookDataInterface {
         }
     }
     /**
+    * Get the list of eligible courses
+    * * wasm_bindgen is used to expose the function to the typescript
+    *
+    * # Arguments
+    *
+    * * `program_code` - The program code
+    * * `taken_course` - The list of taken course codes
+    * * `wam` - The weighted average mark
+    *
+    * # Returns
+    *
+    * The List of Eligible Course Code
+    * None if the program code is not found, or the program code is invalid
+    *
+    * # Example
+    *
+    * ```
+    * let program_code = "3778";
+    * let taken_course = vec!["COMP1511", "COMP1521"];
+    * let wam = Some(75);
+    * let eligible_courses = handbook_data_interface.list_eligible_courses(program_code, taken_course, wam);
+    * ```
+    *
+    * # Panics
+    *
+    * Course code parsing error
+    *
     * @param {string} program_code
     * @param {(string)[]} taken_course
     * @param {number | undefined} [wam]
     * @returns {(string)[] | undefined}
     */
-    list_eligable_courses(program_code, taken_course, wam) {
+    list_eligible_courses(program_code, taken_course, wam) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
             const ptr0 = passStringToWasm0(program_code, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             const len0 = WASM_VECTOR_LEN;
             const ptr1 = passArrayJsValueToWasm0(taken_course, wasm.__wbindgen_malloc);
             const len1 = WASM_VECTOR_LEN;
-            wasm.handbookdatainterface_list_eligable_courses(retptr, this.__wbg_ptr, ptr0, len0, ptr1, len1, isLikeNone(wam) ? 0xFFFFFF : wam);
+            wasm.handbookdatainterface_list_eligible_courses(retptr, this.__wbg_ptr, ptr0, len0, ptr1, len1, isLikeNone(wam) ? 0xFFFFFF : wam);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             let v3;
@@ -301,22 +440,6 @@ export class HandbookDataInterface {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
-    }
-}
-/**
-*/
-export class JsSpecialisationInfo {
-
-    __destroy_into_raw() {
-        const ptr = this.__wbg_ptr;
-        this.__wbg_ptr = 0;
-
-        return ptr;
-    }
-
-    free() {
-        const ptr = this.__destroy_into_raw();
-        wasm.__wbg_jsspecialisationinfo_free(ptr);
     }
 }
 /**

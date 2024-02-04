@@ -1,3 +1,5 @@
+/// This module provides search functionality for program and course
+/// The main purpose of this module is to provide a way to search for courses that are eligible for a program, and list program structure
 use std::{
     borrow::BorrowMut,
     collections::{BTreeMap, BTreeSet, HashSet},
@@ -15,7 +17,36 @@ use crate::{
     utlis::{CourseCode, ProgramCode},
 };
 
+/// Provide search functionality for program
 impl Program {
+    /// List all courses in the program, 
+    /// *parallelly iterate through the course components*
+    /// 
+    /// # Return
+    /// 
+    /// A vector of tuple, where the first element is the name of the course component, and the second element is the list of courses
+    /// 
+    /// i.e. (course component name, list of courses)
+    /// 
+    /// e.g. \[("Core Course", COMP1511), ("Elective", COMP1521), ("ADE", COMP1531)\]
+    /// 
+    /// None if the program does not have any course component
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// // assume api is an instance of ProgramManager, and it is not empty
+    /// let api = ProgramManager::empty();
+    /// let program = api.get_program(&ProgramCode::from_str("3502").unwrap()).unwrap();
+    /// let result = program.list_courses().unwrap();
+    /// 
+    /// ```
+    /// 
+    /// ### Note
+    /// 
+    /// Use this output to display the course structure of the program
+    /// 
+    /// Consider Vec is faster than Hashmap if the number of course components is small. 
     pub fn list_courses(&self) -> Option<Vec<(&str, &Vec<Course>)>> {
         let course_components = self.course_component()?;
         // course_components
@@ -26,6 +57,22 @@ impl Program {
         Some(result)
     }
 
+    /// List all specialisation codes in the program,
+    /// *parallelly iterate through the specialisation components*
+    /// 
+    /// # Return
+    /// 
+    /// A vector of tuple, where the first element is the name of the specialisation component, and the second element is the list of specialisation code
+    /// 
+    /// i.e. (\[(specialisation  name, list of specialisation code), ...\], \[(specialisation name, list of specialisation code), ...\], \[(specialisation name, list of specialisation code), ...\])
+    /// 
+    /// e.g. (\[("Computer Science", \["COMPA1", "COMPJ1"\]), "Commerce", \["COMMA1", "..."\]), \[("Commerce", \["COMMERCE"\])\], \[("Computer Science", \["COMPAA"\])\])
+    /// 
+    /// The first element is the list of major specialisations, the second element is the list of minor specialisations, and the third element is the list of honours specialisations 
+    /// 
+    /// Empty vector if the program does not have any major/minor/honours component
+    /// 
+    /// None if the program does not have any specialisation component
     pub fn list_specialisations(&self) -> Option<[Vec<(&str, &Vec<String>)>; 3]> {
         let specialisation_component = self.specialisation_component()?;
         let major: Vec<(&str, &Vec<String>)> = if let Some(major) = specialisation_component.major()
@@ -59,7 +106,19 @@ impl Program {
     }
 }
 
+/// Provide search functionality for specialisation
 impl Specialisation {
+    /// List all courses in the specialisation,
+    /// *parallelly iterate through the course components*
+    /// 
+    /// # Return
+    /// 
+    /// A vector of tuple, where the first element is the name of the course component, and the second element is the list of courses
+    /// 
+    /// i.e. (course component name, list of courses)
+    /// 
+    /// e.g. \[("Core Course", COMP1511), ("Elective", COMP1521 or COMP2521), ("ADE", COMP1531)\]
+    /// 
     pub fn list_courses(&self) -> Vec<(&str, &Vec<Course>)> {
         self.course_component()
             .par_iter()
@@ -69,6 +128,81 @@ impl Specialisation {
 }
 
 impl ProgramManager {
+    /// Get the program structure of the program
+    /// 
+    /// *parallelly iterate through the course components part*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `code` - The program code
+    /// * `recusive` - If true, the function will return the program structure with the specialisation courses
+    /// * `specialiasation_codes` - The list of specialisation codes to restrict the specialisation courses, 
+    /// if None, the function will recusively list all specialisation courses,
+    /// if not None, the function will only list the specialisation courses that are in the list. But they are must be allowed for the program.
+    /// 
+    /// # Return
+    /// 
+    /// A vector of tuple, where the first element is the name of the course component, and the second element is the list of courses
+    /// 
+    /// i.e. \[(course component name, list of courses), ...\]
+    /// 
+    /// # Return Example 
+    /// 
+    /// If `recusive` is `false`, the course compoent will be list as normal, but specialisation will be list as a list of specialisation codes.
+    /// 
+    /// The format of specialisation code is specialisation type - specialisation name
+    /// 
+    /// e.g. \[
+    /// 
+    /// ("Core Course", COMP1511), 
+    /// 
+    /// ("Elective", COMP1521 or COMP2521), 
+    /// 
+    /// ("Major - Computer Science", \[COMPA1, COMPJ1\])
+    /// 
+    /// ("Minor - Computer Science", \[COMPA2, COMPJ2\])
+    /// 
+    /// ("Honours - Computer Science", \[COMPAA, COMPJA\])
+    /// 
+    /// 
+    /// \]
+    /// 
+    /// If `recusive` is `true`, the course compoent will be list as normal, but specialisation will be list as a list of specialisation courses.
+    /// 
+    /// The format of specialisation code is specialisation type - specialisation name - specialisation component name
+    /// 
+    /// e.g. \[
+    /// 
+    /// ("Core Course", COMP1511), 
+    /// 
+    /// ("Elective", COMP1521 or COMP2521), 
+    /// 
+    /// ("Major - Computer Science (Database System) - Core Course", \["COMP9315"\])
+    /// 
+    /// ("Major - Computer Science (Database System) - Elective", \["COMP9313"\])
+    /// 
+    /// ("Major - Computer Science (Computer Network) - Core Course", \["COMP3331"\])
+    /// 
+    /// ("Major - Computer Science (Computer Network) - Elective", \["COMP3331"\])
+    /// 
+    /// ("Major - Business Analytics - Elective", \["COMM3501"\])
+    /// 
+    /// ("Minor - Business Analytics - Elective", \["COMM3501"\])
+    /// 
+    /// ("Honours - Computer Science - Elective", \["COMM3501"\])
+    /// 
+    /// ....
+    /// 
+    /// \]
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// // assume api is an instance of ProgramManager, and it is not empty
+    /// let api = ProgramManager::empty();
+    /// let result = api.get_program_structure(&ProgramCode::from_str("3502").unwrap(), false, None).unwrap();
+    ///     
+    /// ```
     pub fn get_program_structure(
         &self,
         code: &ProgramCode,
@@ -181,7 +315,30 @@ impl ProgramManager {
                 Ok(result)
             }
         }
+
     }
+
+    /// Get the course pool of the program
+    /// 
+    /// # Arguments
+    /// 
+    /// * `code` - The program code
+    /// 
+    /// # Return
+    /// 
+    /// A SearchPool instance, which contains the course code pool and the course pattern pool
+    /// 
+    /// Error if the program does not exist
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// // assume api is an instance of ProgramManager, and it is not empty
+    /// let api = ProgramManager::empty();
+    /// let result = api.get_course_pool(&ProgramCode::from_str("3502").unwrap()).unwrap();
+    /// 
+    /// ```
+    /// 
     pub fn get_course_pool(&self, code: &ProgramCode) -> Result<SearchPool, String> {
         let program = self.get_program(code)?;
         let mut result: HashSet<&Course> = program
@@ -216,12 +373,17 @@ impl ProgramManager {
 
     // pub fn
 }
+/// Provide search functionality for course
 pub enum SearchPoolLevel {
+    /// Search pool will pool the course code and the course pattern
     Hybrid,
+    /// Search pool will pool the course code only
     CourseCodeOnly,
+    /// Search pool will pool the course pattern only
     CoursePatternOnly,
 }
 
+/// A search pool that contains the course code pool and the course pattern pool
 pub struct SearchPool {
     course_code_pool: Option<HashSet<CourseCode>>,
     course_pattern_pool: Option<HashSet<CourseCode>>,
@@ -229,6 +391,7 @@ pub struct SearchPool {
 }
 
 impl SearchPool {
+    /// Create a new search pool
     pub fn new(
         course_code_pool: HashSet<CourseCode>,
         course_pattern_pool: HashSet<CourseCode>,
@@ -252,7 +415,11 @@ impl SearchPool {
             },
         }
     }
-
+    /// Create a new search pool from a set of course code
+    /// 
+    /// # Arguments
+    /// 
+    /// * `course_code_pool` - A set of course code
     pub fn new_from_set(course_code_pool: HashSet<CourseCode>) -> Self {
         let course_pattern_pool = course_code_pool
             .par_iter()
@@ -266,10 +433,32 @@ impl SearchPool {
         SearchPool::new(course_code_pool, course_pattern_pool)
     }
 
+    /// Create a new search pool from a set of course code
     pub fn set_search_level(&mut self, level: SearchPoolLevel) {
         self.pool_level = level;
     }
 
+    /// Adjust pooled course code and course pattern to match the given number of school code and course code
+    /// 
+    /// number of school code and course code please refer to the CourseCode 
+    /// 
+    /// *parallelly iterate through the course code and course pattern*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `num_of_match_school_code` - The number of school code to match
+    /// * `num_of_match_course_code` - The number of course code to match
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// // assume pool is an instance of SearchPool
+    /// let pool = SearchPool::new_from_set(hashset!{CourseCode::from_str("COMP1511").unwrap(), CourseCode::from_str("COMP1521").unwrap(), CourseCode::from_str("COMP2511").unwrap(), CourseCode::parse("COMM2").unwrap()});
+    /// // pool will be adjusted to match 3 school code and 1 course code, i.e. any level 1 or level 2 course starts with COMP, or level 2 course starts with COMM.
+    /// pool.adjust_pool_to_pattern(4, 1);
+    /// 
+    /// ```
+    /// 
     pub fn adjust_pool_to_pattern(
         &mut self,
         num_of_match_school_code: u8,
@@ -299,11 +488,24 @@ impl SearchPool {
         self.pool_level = SearchPoolLevel::CoursePatternOnly;
     }
 
+    /// Get the pool level
     pub fn pool_level(&self) -> &SearchPoolLevel {
         &self.pool_level
     }
 
-    fn pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
+    /// Get the pool of courses
+    /// 
+    /// *parallelly iterate through the course code pool and the course pattern pool*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `course_manager` - The course manager
+    /// 
+    /// # Return
+    /// 
+    /// A set of courses, the lifetime of the course is the same as the course manager
+    /// 
+    pub fn pool<'a, 'b>(&'a self, course_manager: &'b CourseManager) -> HashSet<&'b course::Course> {
         match self.pool_level {
             SearchPoolLevel::CourseCodeOnly => self.course_code_pool(course_manager),
             SearchPoolLevel::CoursePatternOnly => self.course_pattern_pool(course_manager),
@@ -315,7 +517,19 @@ impl SearchPool {
         }
     }
 
-    fn course_code_pool<'a, 'b>(
+    /// Get the course code pool
+    /// 
+    /// *parallelly iterate through the course code pool*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `course_manager` - The course manager
+    /// 
+    /// # Return
+    /// 
+    /// A set of courses, the lifetime of the course is the same as the course manager
+    /// 
+    pub fn course_code_pool<'a, 'b>(
         &'a self,
         course_manager: &'b CourseManager,
     ) -> HashSet<&'b course::Course> {
@@ -329,7 +543,19 @@ impl SearchPool {
             .collect()
     }
 
-    fn course_pattern_pool<'a, 'b>(
+    /// Get the course pattern pool
+    /// 
+    /// *parallelly iterate through the course pattern pool*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `course_manager` - The course manager
+    /// 
+    /// # Return
+    /// 
+    /// A set of courses, the lifetime of the course is the same as the course manager
+    /// 
+    pub fn course_pattern_pool<'a, 'b>(
         &'a self,
         course_manager: &'b CourseManager,
     ) -> HashSet<&'b course::Course> {
@@ -349,7 +575,22 @@ impl SearchPool {
 }
 
 impl CourseManager {
-    pub fn list_eligable_courses<'a, 'b, 'c, 'd, 'e>(
+    /// List all eligible courses for the program
+    /// 
+    /// *parallelly iterate through the course pool*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `search_pool` - The search pool
+    /// * `program_code` - The program code
+    /// * `taken_course` - The list of taken course
+    /// * `wam` - The WAM
+    /// 
+    /// # Return
+    /// 
+    /// A vector of courses, the lifetime of the course is the same as the course manager
+    /// 
+    pub fn list_eligible_courses<'a, 'b, 'c, 'd, 'e>(
         &'a self,
         search_pool: &'b SearchPool,
         program_code: &'c ProgramCode,
@@ -359,7 +600,7 @@ impl CourseManager {
         let pool: HashSet<&'a course::Course> = search_pool.pool(self);
         pool.into_par_iter()
             .filter(|course_code| {
-                if let Ok(result) = course_code.is_eligable(program_code, taken_course, wam, self) {
+                if let Ok(result) = course_code.is_eligible(program_code, taken_course, wam, self) {
                     return result;
                 } else {
                     return false;
@@ -368,6 +609,17 @@ impl CourseManager {
             .collect::<Vec<&'a course::Course>>()
     }
 
+    /// List all courses from the pool
+    /// 
+    /// *parallelly iterate through the course pool*
+    /// 
+    /// # Arguments
+    /// 
+    /// * `search_pool` - The search pool
+    /// 
+    /// # Return
+    /// 
+    /// A vector of courses, the lifetime of the course is the same as the course manager
     pub fn list_courses_from_pool<'a, 'b>(
         &'a self,
         search_pool: &'b SearchPool,
@@ -1462,7 +1714,7 @@ mod tests {
         let pool = program_api.get_course_pool(&ProgramCode::from_str("3784").unwrap());
         assert!(pool.is_ok());
         let pool = pool.unwrap();
-        let courses = course_api.list_eligable_courses(
+        let courses = course_api.list_eligible_courses(
             &pool,
             &ProgramCode::from_str("3784").unwrap(),
             &vec![],
